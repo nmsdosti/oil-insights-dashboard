@@ -9,6 +9,7 @@ import Auth from "./pages/Auth";
 import Cases from "./pages/Cases";
 import NewCase from "./pages/NewCase";
 import AddTest from "./pages/AddTest";
+import EditTest from "./pages/EditTest";
 import CaseDashboard from "./pages/CaseDashboard";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
@@ -49,6 +50,16 @@ const App = () => (
               <AuthGuard>
                 <AppLayout>
                   <AddTest />
+                </AppLayout>
+              </AuthGuard>
+            }
+          />
+          <Route
+            path="/case/:caseId/test/:testId/edit"
+            element={
+              <AuthGuard>
+                <AppLayout>
+                  <EditTest />
                 </AppLayout>
               </AuthGuard>
             }
