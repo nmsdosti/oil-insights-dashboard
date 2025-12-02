@@ -103,6 +103,7 @@ export type Database = {
           id: string
           lubricant_condition: string
           machine_condition: string
+          recommendations: string | null
           updated_at: string | null
           user_id: string
         }
@@ -115,6 +116,7 @@ export type Database = {
           id?: string
           lubricant_condition: string
           machine_condition: string
+          recommendations?: string | null
           updated_at?: string | null
           user_id: string
         }
@@ -127,6 +129,7 @@ export type Database = {
           id?: string
           lubricant_condition?: string
           machine_condition?: string
+          recommendations?: string | null
           updated_at?: string | null
           user_id?: string
         }
