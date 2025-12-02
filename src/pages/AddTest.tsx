@@ -17,6 +17,7 @@ interface Parameter {
   upperLimit: string;
   actualValue: string;
   unit: string;
+  particleSize: string;
 }
 
 interface TestTemplate {
@@ -31,7 +32,7 @@ const AddTest = () => {
   const [testName, setTestName] = useState("");
   const [imageUrl, setImageUrl] = useState("");
   const [parameters, setParameters] = useState<Parameter[]>([
-    { id: "1", name: "", lowerLimit: "", upperLimit: "", actualValue: "", unit: "" },
+    { id: "1", name: "", lowerLimit: "", upperLimit: "", actualValue: "", unit: "", particleSize: "" },
   ]);
   const [templates, setTemplates] = useState<TestTemplate[]>([]);
   const [selectedTemplate, setSelectedTemplate] = useState<string>("");
@@ -72,6 +73,7 @@ const AddTest = () => {
           upperLimit: p.upper_limit?.toString() || "",
           actualValue: "",
           unit: p.unit || "",
+          particleSize: "",
         }))
       );
     }
@@ -80,7 +82,7 @@ const AddTest = () => {
   const addParameter = () => {
     setParameters([
       ...parameters,
-      { id: Date.now().toString(), name: "", lowerLimit: "", upperLimit: "", actualValue: "", unit: "" },
+      { id: Date.now().toString(), name: "", lowerLimit: "", upperLimit: "", actualValue: "", unit: "", particleSize: "" },
     ]);
   };
 
@@ -142,6 +144,7 @@ const AddTest = () => {
         upper_limit: upper,
         actual_value: actual,
         unit: p.unit || null,
+        particle_size: p.particleSize || null,
         status: calculateStatus(actual, lower, upper),
       };
     });
@@ -167,7 +170,7 @@ const AddTest = () => {
         // Reset form
         setTestName("");
         setImageUrl("");
-        setParameters([{ id: "1", name: "", lowerLimit: "", upperLimit: "", actualValue: "", unit: "" }]);
+        setParameters([{ id: "1", name: "", lowerLimit: "", upperLimit: "", actualValue: "", unit: "", particleSize: "" }]);
         setSelectedTemplate("");
       } else {
         navigate(`/case/${caseId}/dashboard`);
@@ -312,7 +315,7 @@ const AddTest = () => {
                   )}
                 </div>
 
-                <div className="grid gap-3 md:grid-cols-5">
+                <div className="grid gap-3 md:grid-cols-6">
                   <div className="md:col-span-2 space-y-2">
                     <Label>Parameter Name *</Label>
                     <Input
@@ -350,6 +353,15 @@ const AddTest = () => {
                       placeholder="ppm, cSt"
                       value={param.unit}
                       onChange={(e) => updateParameter(param.id, "unit", e.target.value)}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Particle Size</Label>
+                    <Input
+                      placeholder="e.g., 4μm"
+                      value={param.particleSize}
+                      onChange={(e) => updateParameter(param.id, "particleSize", e.target.value)}
                     />
                   </div>
                 </div>

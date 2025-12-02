@@ -22,6 +22,7 @@ export type Database = {
           id: string
           lower_limit: number | null
           parameter_name: string
+          particle_size: string | null
           status: string | null
           unit: string | null
           upper_limit: number | null
@@ -33,6 +34,7 @@ export type Database = {
           id?: string
           lower_limit?: number | null
           parameter_name: string
+          particle_size?: string | null
           status?: string | null
           unit?: string | null
           upper_limit?: number | null
@@ -44,6 +46,7 @@ export type Database = {
           id?: string
           lower_limit?: number | null
           parameter_name?: string
+          particle_size?: string | null
           status?: string | null
           unit?: string | null
           upper_limit?: number | null
