@@ -66,6 +66,7 @@ export type Database = {
           case_id: string
           created_at: string | null
           id: string
+          image_comment: string | null
           image_url: string | null
           test_name: string
         }
@@ -73,6 +74,7 @@ export type Database = {
           case_id: string
           created_at?: string | null
           id?: string
+          image_comment?: string | null
           image_url?: string | null
           test_name: string
         }
@@ -80,6 +82,7 @@ export type Database = {
           case_id?: string
           created_at?: string | null
           id?: string
+          image_comment?: string | null
           image_url?: string | null
           test_name?: string
         }

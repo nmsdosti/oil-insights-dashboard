@@ -31,6 +31,7 @@ const AddTest = () => {
   const [loading, setLoading] = useState(false);
   const [testName, setTestName] = useState("");
   const [imageUrl, setImageUrl] = useState("");
+  const [imageComment, setImageComment] = useState("");
   const [parameters, setParameters] = useState<Parameter[]>([
     { id: "1", name: "", lowerLimit: "", upperLimit: "", actualValue: "", unit: "", particleSize: "" },
   ]);
@@ -121,6 +122,7 @@ const AddTest = () => {
         case_id: caseId,
         test_name: testName,
         image_url: imageUrl || null,
+        image_comment: imageComment || null,
       })
       .select()
       .single();
@@ -170,6 +172,7 @@ const AddTest = () => {
         // Reset form
         setTestName("");
         setImageUrl("");
+        setImageComment("");
         setParameters([{ id: "1", name: "", lowerLimit: "", upperLimit: "", actualValue: "", unit: "", particleSize: "" }]);
         setSelectedTemplate("");
       } else {
@@ -287,6 +290,18 @@ const AddTest = () => {
               </div>
               <p className="text-xs text-muted-foreground">Upload your image to imgbb.com and paste the link here</p>
             </div>
+
+            {imageUrl && (
+              <div className="space-y-2">
+                <Label htmlFor="image-comment">Image Comment (Optional)</Label>
+                <Input
+                  id="image-comment"
+                  placeholder="Add a comment about this particle image..."
+                  value={imageComment}
+                  onChange={(e) => setImageComment(e.target.value)}
+                />
+              </div>
+            )}
           </CardContent>
         </Card>
 

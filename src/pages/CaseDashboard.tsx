@@ -31,6 +31,7 @@ interface TestData {
   id: string;
   test_name: string;
   image_url: string;
+  image_comment: string;
   created_at: string;
   results: TestResult[];
 }
@@ -100,6 +101,7 @@ const CaseDashboard = () => {
         id,
         test_name,
         image_url,
+        image_comment,
         created_at,
         case_test_results (
           id,
@@ -121,6 +123,7 @@ const CaseDashboard = () => {
         id: test.id,
         test_name: test.test_name,
         image_url: test.image_url,
+        image_comment: test.image_comment || "",
         created_at: test.created_at,
         results: test.case_test_results || [],
       }));
@@ -468,37 +471,32 @@ const CaseDashboard = () => {
 
         {tests.map((test) => (
           <div key={test.id} className="pdf-section bg-white rounded-lg shadow-sm p-6">
-            <div className="flex items-start justify-between mb-4">
+            <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
                 <div className="w-1 h-6 bg-sky-500 rounded"></div>
                 TEST RESULTS - {test.test_name.toUpperCase()}
               </h3>
-              <div className="flex items-center gap-2">
-                {test.image_url && (
-                  <img src={test.image_url} alt="Test" className="h-16 w-16 rounded border border-slate-200 object-cover" />
-                )}
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => navigate(`/case/${caseId}/test/${test.id}/edit`)}
-                >
-                  <Edit className="h-4 w-4 mr-1" />
-                  Edit
-                </Button>
-              </div>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => navigate(`/case/${caseId}/test/${test.id}/edit`)}
+              >
+                <Edit className="h-4 w-4 mr-1" />
+                Edit
+              </Button>
             </div>
             
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="bg-sky-600 text-white">
-                    <th className="text-left p-3 font-semibold rounded-tl-lg">TEST PARAMETER</th>
-                    <th className="text-left p-3 font-semibold">LOWER LIMIT</th>
-                    <th className="text-left p-3 font-semibold">UPPER LIMIT</th>
-                    <th className="text-left p-3 font-semibold">ACTUAL VALUE</th>
-                    <th className="text-left p-3 font-semibold">UNIT</th>
+                    <th className="text-center p-3 font-semibold rounded-tl-lg">TEST PARAMETER</th>
+                    <th className="text-center p-3 font-semibold">LOWER LIMIT</th>
+                    <th className="text-center p-3 font-semibold">UPPER LIMIT</th>
+                    <th className="text-center p-3 font-semibold">ACTUAL VALUE</th>
+                    <th className="text-center p-3 font-semibold">UNIT</th>
                     {test.results.some((r) => r.particle_size) && (
-                      <th className="text-left p-3 font-semibold">PARTICLE SIZE</th>
+                      <th className="text-center p-3 font-semibold">PARTICLE SIZE</th>
                     )}
                     <th className="text-center p-3 font-semibold rounded-tr-lg">STATUS</th>
                   </tr>
@@ -506,13 +504,13 @@ const CaseDashboard = () => {
                 <tbody>
                   {test.results.map((result, idx) => (
                     <tr key={result.id} className={idx % 2 === 0 ? "bg-slate-50" : "bg-white"}>
-                      <td className="p-3 font-medium text-slate-700">{result.parameter_name}</td>
-                      <td className="p-3 text-slate-600">{result.lower_limit || "-"}</td>
-                      <td className="p-3 text-slate-600">{result.upper_limit || "-"}</td>
-                      <td className="p-3 font-bold text-slate-800">{result.actual_value}</td>
-                      <td className="p-3 text-slate-600">{result.unit || "-"}</td>
+                      <td className="p-3 text-center font-medium text-slate-700">{result.parameter_name}</td>
+                      <td className="p-3 text-center text-slate-600">{result.lower_limit || "-"}</td>
+                      <td className="p-3 text-center text-slate-600">{result.upper_limit || "-"}</td>
+                      <td className="p-3 text-center font-bold text-slate-800">{result.actual_value}</td>
+                      <td className="p-3 text-center text-slate-600">{result.unit || "-"}</td>
                       {test.results.some((r) => r.particle_size) && (
-                        <td className="p-3 text-slate-600">{result.particle_size || "-"}</td>
+                        <td className="p-3 text-center text-slate-600">{result.particle_size || "-"}</td>
                       )}
                       <td className="p-3 text-center">
                         <div className="flex justify-center">
@@ -530,6 +528,25 @@ const CaseDashboard = () => {
                 </tbody>
               </table>
             </div>
+
+            {test.image_url && (
+              <div className="mt-6 border-t border-slate-200 pt-6">
+                <h4 className="text-sm font-semibold text-slate-700 mb-3 text-center">TEST IMAGE - PARTICLE ANALYSIS</h4>
+                <div className="flex flex-col items-center">
+                  <img 
+                    src={test.image_url} 
+                    alt={`Test particles - ${test.test_name}`} 
+                    className="max-w-md w-full h-auto rounded-lg border-2 border-slate-300 shadow-md object-contain"
+                  />
+                  {test.image_comment && (
+                    <div className="mt-3 w-full max-w-md bg-slate-50 rounded-lg p-3 text-center">
+                      <p className="text-sm font-medium text-slate-500 mb-1">Image Comment:</p>
+                      <p className="text-slate-700">{test.image_comment}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         ))}
 
@@ -573,8 +590,8 @@ const CaseDashboard = () => {
 
         <div className="pdf-section bg-white rounded-lg shadow-sm px-6 py-4">
           <div className="border-t border-slate-200 pt-4 text-center text-sm text-slate-500">
-            <p className="font-semibold text-slate-700">{companySettings?.company_name || "Oil Analysis Lab"}</p>
-            <p>
+            <p className="font-semibold text-slate-700 text-center">{companySettings?.company_name || "Oil Analysis Lab"}</p>
+            <p className="text-center">
               {companySettings?.address && `${companySettings.address} | `}
               {companySettings?.contact_number && `Phone: ${companySettings.contact_number} | `}
               {companySettings?.email && `Email: ${companySettings.email}`}

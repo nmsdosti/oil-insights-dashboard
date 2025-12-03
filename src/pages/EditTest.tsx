@@ -26,6 +26,7 @@ const EditTest = () => {
   const [saving, setSaving] = useState(false);
   const [testName, setTestName] = useState("");
   const [imageUrl, setImageUrl] = useState("");
+  const [imageComment, setImageComment] = useState("");
   const [parameters, setParameters] = useState<Parameter[]>([]);
 
   useEffect(() => {
@@ -48,6 +49,7 @@ const EditTest = () => {
 
     setTestName(testData.test_name);
     setImageUrl(testData.image_url || "");
+    setImageComment(testData.image_comment || "");
 
     // Fetch test results
     const { data: results, error: resultsError } = await supabase
@@ -125,6 +127,7 @@ const EditTest = () => {
       .update({
         test_name: testName,
         image_url: imageUrl || null,
+        image_comment: imageComment || null,
       })
       .eq("id", testId);
 
@@ -216,6 +219,18 @@ const EditTest = () => {
                 onChange={(e) => setImageUrl(e.target.value)}
               />
             </div>
+
+            {imageUrl && (
+              <div className="space-y-2">
+                <Label htmlFor="image-comment">Image Comment (Optional)</Label>
+                <Input
+                  id="image-comment"
+                  placeholder="Add a comment about this particle image..."
+                  value={imageComment}
+                  onChange={(e) => setImageComment(e.target.value)}
+                />
+              </div>
+            )}
           </CardContent>
         </Card>
 
