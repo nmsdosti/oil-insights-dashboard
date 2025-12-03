@@ -277,31 +277,8 @@ const CaseDashboard = () => {
           useCORS: true,
           allowTaint: true,
           backgroundColor: "#ffffff",
-          onclone: (clonedDoc) => {
-            // Apply PDF-specific styles to fix alignment
-            const clonedElement = clonedDoc.body;
-            
-            // Fix all flex containers
-            clonedElement.querySelectorAll('[class*="flex"]').forEach((el) => {
-              const htmlEl = el as HTMLElement;
-              htmlEl.style.alignItems = 'flex-start';
-            });
-            
-            // Fix all text elements
-            clonedElement.querySelectorAll('p, span, h1, h2, h3, h4, h5, h6, div').forEach((el) => {
-              const htmlEl = el as HTMLElement;
-              htmlEl.style.lineHeight = '1.4';
-              htmlEl.style.transform = 'none';
-            });
-
-            // Fix badges and inline elements
-            clonedElement.querySelectorAll('[class*="badge"], [class*="Badge"]').forEach((el) => {
-              const htmlEl = el as HTMLElement;
-              htmlEl.style.display = 'inline-block';
-              htmlEl.style.verticalAlign = 'middle';
-              htmlEl.style.lineHeight = '1.4';
-            });
-          },
+          windowWidth: section.scrollWidth,
+          windowHeight: section.scrollHeight,
         });
 
         const imgData = canvas.toDataURL("image/png");
