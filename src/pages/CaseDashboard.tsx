@@ -233,6 +233,12 @@ const CaseDashboard = () => {
     toast.info("Generating PDF... Converting images...");
 
     try {
+      // Hide no-print elements
+      const noPrintElements = dashboardRef.current.querySelectorAll('.no-print');
+      noPrintElements.forEach((el) => {
+        (el as HTMLElement).style.display = 'none';
+      });
+
       // Pre-convert all external images to base64
       const images = dashboardRef.current.querySelectorAll('img');
       const originalSrcs = new Map<HTMLImageElement, string>();
@@ -271,6 +277,8 @@ const CaseDashboard = () => {
           useCORS: true,
           allowTaint: true,
           backgroundColor: "#ffffff",
+          windowWidth: section.scrollWidth,
+          windowHeight: section.scrollHeight,
         });
 
         const imgData = canvas.toDataURL("image/png");
@@ -296,6 +304,11 @@ const CaseDashboard = () => {
         img.src = src;
         img.style.display = '';
       }
+
+      // Restore no-print elements
+      noPrintElements.forEach((el) => {
+        (el as HTMLElement).style.display = '';
+      });
 
       pdf.save(`oil-analysis-${caseData?.customer_name}-${format(new Date(), "yyyy-MM-dd")}.pdf`);
       toast.success("PDF generated successfully!");
@@ -542,6 +555,7 @@ const CaseDashboard = () => {
                 size="sm"
                 variant="outline"
                 onClick={() => navigate(`/case/${caseId}/test/${test.id}/edit`)}
+                className="no-print"
               >
                 <Edit className="h-4 w-4 mr-1" />
                 Edit
@@ -619,12 +633,12 @@ const CaseDashboard = () => {
               DATA INTERPRETATION & RECOMMENDATIONS
             </h3>
             {!editingRecommendations ? (
-              <Button size="sm" variant="outline" onClick={() => setEditingRecommendations(true)}>
+              <Button size="sm" variant="outline" onClick={() => setEditingRecommendations(true)} className="no-print">
                 <Edit className="mr-2 h-4 w-4" />
                 Edit
               </Button>
             ) : (
-              <Button size="sm" onClick={saveRecommendations} className="bg-sky-600 hover:bg-sky-700">
+              <Button size="sm" onClick={saveRecommendations} className="bg-sky-600 hover:bg-sky-700 no-print">
                 <Save className="mr-2 h-4 w-4" />
                 Save
               </Button>
