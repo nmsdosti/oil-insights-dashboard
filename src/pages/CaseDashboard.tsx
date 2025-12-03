@@ -191,31 +191,22 @@ const CaseDashboard = () => {
     };
   };
 
-  // Convert external image to base64 to avoid CORS issues in PDF
-  const convertImageToBase64 = async (imgElement: HTMLImageElement): Promise<string | null> => {
+  // Convert external image to base64 using edge function proxy to avoid CORS issues
+  const convertImageToBase64 = async (imageUrl: string): Promise<string | null> => {
     try {
-      const response = await fetch(imgElement.src, { mode: 'cors' });
-      const blob = await response.blob();
-      return new Promise((resolve) => {
-        const reader = new FileReader();
-        reader.onloadend = () => resolve(reader.result as string);
-        reader.onerror = () => resolve(null);
-        reader.readAsDataURL(blob);
+      // Use edge function to proxy the image and convert to base64
+      const { data, error } = await supabase.functions.invoke('proxy-image', {
+        body: { url: imageUrl }
       });
-    } catch {
-      // If fetch fails, try canvas approach
-      try {
-        const canvas = document.createElement('canvas');
-        canvas.width = imgElement.naturalWidth || imgElement.width;
-        canvas.height = imgElement.naturalHeight || imgElement.height;
-        const ctx = canvas.getContext('2d');
-        if (ctx) {
-          ctx.drawImage(imgElement, 0, 0);
-          return canvas.toDataURL('image/png');
-        }
-      } catch {
+
+      if (error) {
+        console.error('Proxy error:', error);
         return null;
       }
+
+      return data?.dataUrl || null;
+    } catch (err) {
+      console.error('Error converting image:', err);
       return null;
     }
   };
@@ -234,7 +225,7 @@ const CaseDashboard = () => {
       for (const img of images) {
         if (img.src && !img.src.startsWith('data:')) {
           originalSrcs.set(img, img.src);
-          const base64 = await convertImageToBase64(img);
+          const base64 = await convertImageToBase64(img.src);
           if (base64) {
             img.src = base64;
           }
