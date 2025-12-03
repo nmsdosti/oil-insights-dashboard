@@ -2,15 +2,14 @@ import { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
-import { ArrowLeft, Plus, Download, Loader2, Edit, Save } from "lucide-react";
+import { ArrowLeft, Plus, Download, Loader2, Edit, Save, CheckCircle, AlertTriangle, XCircle } from "lucide-react";
 import { format } from "date-fns";
 import { 
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, 
-  PieChart, Pie, Cell, AreaChart, Area, RadialBarChart, RadialBar 
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
+  PieChart, Pie, Cell, RadialBarChart, RadialBar, Legend
 } from "recharts";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
@@ -56,9 +55,11 @@ interface CompanySettings {
 }
 
 const COLORS = {
-  NORMAL: "hsl(var(--success))",
-  ALERT: "hsl(var(--warning))",
-  ALARM: "hsl(var(--destructive))",
+  NORMAL: "#22c55e",
+  ALERT: "#f59e0b",
+  ALARM: "#ef4444",
+  primary: "#0ea5e9",
+  secondary: "#06b6d4",
 };
 
 const CaseDashboard = () => {
@@ -155,17 +156,36 @@ const CaseDashboard = () => {
     }
   };
 
-  const getConditionColor = (condition: string) => {
-    switch (condition) {
-      case "NORMAL":
-        return "bg-success text-success-foreground";
-      case "ALERT":
-        return "bg-warning text-warning-foreground";
-      case "ALARM":
-        return "bg-destructive text-destructive-foreground";
-      default:
-        return "bg-muted text-muted-foreground";
+  const getConditionInfo = (machineCondition: string, lubricantCondition: string) => {
+    const conditions = [machineCondition, lubricantCondition];
+    if (conditions.includes("ALARM")) {
+      return {
+        label: "ALARM",
+        color: COLORS.ALARM,
+        bgColor: "bg-red-50",
+        textColor: "text-red-700",
+        icon: XCircle,
+        message: "Critical condition detected. Immediate action required. Equipment may be at risk of failure.",
+      };
     }
+    if (conditions.includes("ALERT")) {
+      return {
+        label: "ALERT",
+        color: COLORS.ALERT,
+        bgColor: "bg-amber-50",
+        textColor: "text-amber-700",
+        icon: AlertTriangle,
+        message: "Some parameters are outside normal limits. Monitor closely and consider corrective action.",
+      };
+    }
+    return {
+      label: "NORMAL",
+      color: COLORS.NORMAL,
+      bgColor: "bg-green-50",
+      textColor: "text-green-700",
+      icon: CheckCircle,
+      message: "The lubricant and machine condition are normal. All parameters are within acceptable limits. No immediate action required. Continue routine monitoring.",
+    };
   };
 
   const generatePDF = async () => {
@@ -181,7 +201,6 @@ const CaseDashboard = () => {
       const margin = 10;
       const contentWidth = pageWidth - 2 * margin;
 
-      // Get all sections
       const sections = dashboardRef.current.querySelectorAll(".pdf-section");
       let yPosition = margin;
 
@@ -199,7 +218,6 @@ const CaseDashboard = () => {
         const imgWidth = contentWidth;
         const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
-        // Check if we need a new page
         if (yPosition + imgHeight > pageHeight - margin && i > 0) {
           pdf.addPage();
           yPosition = margin;
@@ -208,7 +226,6 @@ const CaseDashboard = () => {
         pdf.addImage(imgData, "PNG", margin, yPosition, imgWidth, imgHeight);
         yPosition += imgHeight + 5;
 
-        // Add page break after large sections
         if (imgHeight > pageHeight / 2) {
           pdf.addPage();
           yPosition = margin;
@@ -254,349 +271,316 @@ const CaseDashboard = () => {
     { name: "ALARM", value: statusCounts.ALARM, fill: COLORS.ALARM },
   ].filter((d) => d.value > 0);
 
+  const conditionInfo = getConditionInfo(caseData.machine_condition, caseData.lubricant_condition);
+  const ConditionIcon = conditionInfo.icon;
+
+  const barChartData = allResults.slice(0, 6).map((r) => ({
+    name: r.parameter_name.length > 10 ? r.parameter_name.substring(0, 10) + "..." : r.parameter_name,
+    value: r.actual_value,
+    fill: r.status === "NORMAL" ? COLORS.primary : r.status === "ALERT" ? COLORS.ALERT : COLORS.ALARM,
+  }));
+
   const radialData = [
-    {
-      name: "Normal",
-      value: statusCounts.NORMAL,
-      fill: COLORS.NORMAL,
-    },
-    {
-      name: "Alert",
-      value: statusCounts.ALERT,
-      fill: COLORS.ALERT,
-    },
-    {
-      name: "Alarm",
-      value: statusCounts.ALARM,
-      fill: COLORS.ALARM,
-    },
+    { name: "Normal", value: statusCounts.NORMAL, fill: COLORS.NORMAL },
+    { name: "Alert", value: statusCounts.ALERT, fill: COLORS.ALERT },
+    { name: "Alarm", value: statusCounts.ALARM, fill: COLORS.ALARM },
   ];
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="mb-6 flex items-center justify-between">
-        <Button variant="ghost" onClick={() => navigate("/")}>
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to Cases
-        </Button>
-        <div className="flex gap-2">
-          <Button asChild variant="outline">
-            <Link to={`/case/${caseId}/add-test`}>
-              <Plus className="mr-2 h-4 w-4" />
-              Add Test
-            </Link>
+    <div className="min-h-screen bg-slate-50">
+      <div className="bg-white border-b sticky top-0 z-10">
+        <div className="container mx-auto px-4 py-3 flex items-center justify-between">
+          <Button variant="ghost" onClick={() => navigate("/")}>
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to Cases
           </Button>
-          <Button onClick={generatePDF} disabled={generating}>
-            {generating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
-            Export PDF
-          </Button>
+          <div className="flex gap-2">
+            <Button asChild variant="outline">
+              <Link to={`/case/${caseId}/add-test`}>
+                <Plus className="mr-2 h-4 w-4" />
+                Add Test
+              </Link>
+            </Button>
+            <Button onClick={generatePDF} disabled={generating} className="bg-sky-600 hover:bg-sky-700">
+              {generating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
+              Export PDF
+            </Button>
+          </div>
         </div>
       </div>
 
-      <div ref={dashboardRef} className="space-y-6 bg-background p-6 rounded-lg">
-        {/* Header */}
-        <div className="pdf-section flex items-start justify-between border-b border-border pb-6">
-          <div>
-            {companySettings?.logo_url && (
-              <img src={companySettings.logo_url} alt="Company Logo" className="h-16 mb-4" />
-            )}
-            <h1 className="text-3xl font-bold">{companySettings?.company_name || "Oil Analysis Lab"}</h1>
-            {companySettings && (
-              <div className="mt-2 text-sm text-muted-foreground space-y-1">
-                {companySettings.address && <p>{companySettings.address}</p>}
-                {companySettings.contact_number && <p>Phone: {companySettings.contact_number}</p>}
-                {companySettings.email && <p>Email: {companySettings.email}</p>}
+      <div ref={dashboardRef} className="container mx-auto px-4 py-6 space-y-6">
+        <div className="pdf-section bg-white rounded-lg shadow-sm overflow-hidden">
+          <div className="bg-gradient-to-r from-sky-600 to-cyan-500 px-6 py-4 flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              {companySettings?.logo_url && (
+                <img src={companySettings.logo_url} alt="Logo" className="h-12 bg-white rounded p-1" />
+              )}
+              <div className="text-white">
+                <h1 className="text-xl font-bold">{companySettings?.company_name || "Oil Analysis Lab"}</h1>
+                {companySettings?.address && <p className="text-sm text-sky-100">{companySettings.address}</p>}
               </div>
-            )}
+            </div>
+            <div className="text-right text-white">
+              <h2 className="text-2xl font-bold">Comprehensive</h2>
+              <h2 className="text-2xl font-bold">Oil Analysis Report</h2>
+            </div>
           </div>
-          <div className="text-right">
-            <p className="text-sm text-muted-foreground">Report Date</p>
-            <p className="text-lg font-semibold">{format(new Date(), "MMMM d, yyyy")}</p>
-          </div>
-        </div>
-
-        {/* Customer Info */}
-        <Card className="pdf-section">
-          <CardHeader>
-            <CardTitle>Customer Information</CardTitle>
-          </CardHeader>
-          <CardContent className="grid gap-4 md:grid-cols-2">
+          
+          <div className="bg-slate-100 px-6 py-3 grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
             <div>
-              <p className="text-sm text-muted-foreground">Name</p>
-              <p className="font-semibold">{caseData.customer_name}</p>
+              <span className="font-semibold">CLIENT:</span> {caseData.customer_name}
             </div>
             {caseData.customer_email && (
               <div>
-                <p className="text-sm text-muted-foreground">Email</p>
-                <p className="font-semibold">{caseData.customer_email}</p>
+                <span className="font-semibold">EMAIL:</span> {caseData.customer_email}
               </div>
             )}
-            {caseData.customer_mobile && (
-              <div>
-                <p className="text-sm text-muted-foreground">Mobile</p>
-                <p className="font-semibold">{caseData.customer_mobile}</p>
-              </div>
-            )}
-            {caseData.customer_address && (
-              <div>
-                <p className="text-sm text-muted-foreground">Address</p>
-                <p className="font-semibold">{caseData.customer_address}</p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+            <div>
+              <span className="font-semibold">REPORT DATE:</span> {format(new Date(), "MMM d, yyyy")}
+            </div>
+            <div>
+              <span className="font-semibold">SAMPLE DATE:</span> {format(new Date(caseData.created_at), "MMM d, yyyy")}
+            </div>
+          </div>
+        </div>
 
-        {/* Overall Status */}
-        <div className="pdf-section grid gap-4 md:grid-cols-2">
-          <Card>
-            <CardHeader>
-              <CardTitle>Machine Condition</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Badge className={`text-lg px-4 py-2 ${getConditionColor(caseData.machine_condition)}`}>
+        <div className="pdf-section bg-white rounded-lg shadow-sm p-6">
+          <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+            <div className="w-1 h-6 bg-sky-500 rounded"></div>
+            EXECUTIVE SUMMARY
+          </h3>
+          <div className={`flex items-start gap-4 p-4 rounded-lg ${conditionInfo.bgColor}`}>
+            <div 
+              className="w-16 h-16 rounded-full flex items-center justify-center shrink-0"
+              style={{ backgroundColor: conditionInfo.color }}
+            >
+              <ConditionIcon className="w-8 h-8 text-white" />
+            </div>
+            <div>
+              <h4 className={`text-2xl font-bold ${conditionInfo.textColor}`}>
+                {conditionInfo.label}
+              </h4>
+              <p className="text-sm text-slate-600 mt-1">CONDITION</p>
+              <p className="text-slate-700 mt-2">{conditionInfo.message}</p>
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-2 gap-4 mt-4">
+            <div className="bg-slate-50 rounded-lg p-4">
+              <p className="text-sm text-slate-500 mb-1">Machine Condition</p>
+              <Badge className={`text-base px-3 py-1 ${
+                caseData.machine_condition === "NORMAL" ? "bg-green-500" :
+                caseData.machine_condition === "ALERT" ? "bg-amber-500" : "bg-red-500"
+              } text-white`}>
                 {caseData.machine_condition}
               </Badge>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader>
-              <CardTitle>Lubricant Condition</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Badge className={`text-lg px-4 py-2 ${getConditionColor(caseData.lubricant_condition)}`}>
+            </div>
+            <div className="bg-slate-50 rounded-lg p-4">
+              <p className="text-sm text-slate-500 mb-1">Lubricant Condition</p>
+              <Badge className={`text-base px-3 py-1 ${
+                caseData.lubricant_condition === "NORMAL" ? "bg-green-500" :
+                caseData.lubricant_condition === "ALERT" ? "bg-amber-500" : "bg-red-500"
+              } text-white`}>
                 {caseData.lubricant_condition}
               </Badge>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         </div>
 
-        {/* Charts Grid */}
-        <div className="pdf-section grid gap-4 md:grid-cols-2">
-          <Card>
-            <CardHeader>
-              <CardTitle>Status Distribution</CardTitle>
-              <CardDescription>Parameter status breakdown</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <PieChart>
-                  <Pie
-                    data={pieData}
+        <div className="pdf-section bg-white rounded-lg shadow-sm p-6">
+          <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+            <div className="w-1 h-6 bg-sky-500 rounded"></div>
+            DATA DASHBOARD
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <Card className="border-slate-200">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-semibold text-slate-700">PARAMETER VALUES</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={200}>
+                  <BarChart data={barChartData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                    <XAxis dataKey="name" tick={{ fontSize: 10 }} stroke="#64748b" />
+                    <YAxis tick={{ fontSize: 10 }} stroke="#64748b" />
+                    <Tooltip />
+                    <Bar dataKey="value" radius={[4, 4, 0, 0]}>
+                      {barChartData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.fill} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+
+            <Card className="border-slate-200">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-semibold text-slate-700">STATUS DISTRIBUTION</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={200}>
+                  <PieChart>
+                    <Pie
+                      data={pieData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={40}
+                      outerRadius={70}
+                      dataKey="value"
+                      label={({ name, percent }) => `${(percent * 100).toFixed(0)}%`}
+                    >
+                      {pieData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.fill} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                    <Legend iconSize={10} />
+                  </PieChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+
+            <Card className="border-slate-200">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-semibold text-slate-700">STATUS OVERVIEW</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={200}>
+                  <RadialBarChart
                     cx="50%"
                     cy="50%"
-                    labelLine={false}
-                    label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                    outerRadius={100}
-                    fill="#8884d8"
-                    dataKey="value"
+                    innerRadius="30%"
+                    outerRadius="100%"
+                    barSize={15}
+                    data={radialData}
                   >
-                    {pieData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.fill} />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                </PieChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Parameter Status</CardTitle>
-              <CardDescription>Radial comparison view</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <RadialBarChart
-                  cx="50%"
-                  cy="50%"
-                  innerRadius="20%"
-                  outerRadius="90%"
-                  barSize={20}
-                  data={radialData}
-                >
-                  <RadialBar
-                    background
-                    dataKey="value"
-                  />
-                  <Legend iconSize={10} layout="vertical" verticalAlign="middle" align="right" />
-                  <Tooltip />
-                </RadialBarChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
+                    <RadialBar background dataKey="value" />
+                    <Legend iconSize={10} layout="vertical" verticalAlign="middle" align="right" />
+                    <Tooltip />
+                  </RadialBarChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          </div>
         </div>
 
-        {/* Bar Chart */}
-        <Card className="pdf-section">
-          <CardHeader>
-            <CardTitle>Test Results Overview</CardTitle>
-            <CardDescription>Distribution of parameter statuses across all tests</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart
-                data={[
-                  { name: "NORMAL", count: statusCounts.NORMAL, fill: COLORS.NORMAL },
-                  { name: "ALERT", count: statusCounts.ALERT, fill: COLORS.ALERT },
-                  { name: "ALARM", count: statusCounts.ALARM, fill: COLORS.ALARM },
-                ]}
-              >
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" />
-                <YAxis stroke="hsl(var(--muted-foreground))" />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: "hsl(var(--popover))",
-                    border: "1px solid hsl(var(--border))",
-                    borderRadius: "var(--radius)",
-                  }}
-                />
-                <Bar dataKey="count" radius={[8, 8, 0, 0]}>
-                  {[statusCounts.NORMAL, statusCounts.ALERT, statusCounts.ALARM].map((_, index) => (
-                    <Cell key={`cell-${index}`} fill={[COLORS.NORMAL, COLORS.ALERT, COLORS.ALARM][index]} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-
-        {/* Recommendations Section */}
-        <Card className="pdf-section">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle>Overall Recommendations</CardTitle>
-              {!editingRecommendations ? (
-                <Button size="sm" variant="outline" onClick={() => setEditingRecommendations(true)}>
-                  <Edit className="mr-2 h-4 w-4" />
+        {tests.map((test) => (
+          <div key={test.id} className="pdf-section bg-white rounded-lg shadow-sm p-6">
+            <div className="flex items-start justify-between mb-4">
+              <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                <div className="w-1 h-6 bg-sky-500 rounded"></div>
+                TEST RESULTS - {test.test_name.toUpperCase()}
+              </h3>
+              <div className="flex items-center gap-2">
+                {test.image_url && (
+                  <img src={test.image_url} alt="Test" className="h-16 w-16 rounded border border-slate-200 object-cover" />
+                )}
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => navigate(`/case/${caseId}/test/${test.id}/edit`)}
+                >
+                  <Edit className="h-4 w-4 mr-1" />
                   Edit
                 </Button>
-              ) : (
-                <Button size="sm" onClick={saveRecommendations}>
-                  <Save className="mr-2 h-4 w-4" />
-                  Save
-                </Button>
-              )}
-            </div>
-          </CardHeader>
-          <CardContent>
-            {editingRecommendations ? (
-              <div className="space-y-2">
-                <Textarea
-                  value={recommendations}
-                  onChange={(e) => setRecommendations(e.target.value)}
-                  placeholder="Enter overall recommendations for this oil analysis case..."
-                  rows={6}
-                  className="resize-none"
-                />
               </div>
+            </div>
+            
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-sky-600 text-white">
+                    <th className="text-left p-3 font-semibold rounded-tl-lg">TEST PARAMETER</th>
+                    <th className="text-left p-3 font-semibold">LOWER LIMIT</th>
+                    <th className="text-left p-3 font-semibold">UPPER LIMIT</th>
+                    <th className="text-left p-3 font-semibold">ACTUAL VALUE</th>
+                    <th className="text-left p-3 font-semibold">UNIT</th>
+                    {test.results.some((r) => r.particle_size) && (
+                      <th className="text-left p-3 font-semibold">PARTICLE SIZE</th>
+                    )}
+                    <th className="text-center p-3 font-semibold rounded-tr-lg">STATUS</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {test.results.map((result, idx) => (
+                    <tr key={result.id} className={idx % 2 === 0 ? "bg-slate-50" : "bg-white"}>
+                      <td className="p-3 font-medium text-slate-700">{result.parameter_name}</td>
+                      <td className="p-3 text-slate-600">{result.lower_limit || "-"}</td>
+                      <td className="p-3 text-slate-600">{result.upper_limit || "-"}</td>
+                      <td className="p-3 font-bold text-slate-800">{result.actual_value}</td>
+                      <td className="p-3 text-slate-600">{result.unit || "-"}</td>
+                      {test.results.some((r) => r.particle_size) && (
+                        <td className="p-3 text-slate-600">{result.particle_size || "-"}</td>
+                      )}
+                      <td className="p-3 text-center">
+                        <div className="flex justify-center">
+                          {result.status === "NORMAL" ? (
+                            <CheckCircle className="w-6 h-6 text-green-500" />
+                          ) : result.status === "ALERT" ? (
+                            <AlertTriangle className="w-6 h-6 text-amber-500" />
+                          ) : (
+                            <XCircle className="w-6 h-6 text-red-500" />
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        ))}
+
+        <div className="pdf-section bg-white rounded-lg shadow-sm p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+              <div className="w-1 h-6 bg-sky-500 rounded"></div>
+              DATA INTERPRETATION & RECOMMENDATIONS
+            </h3>
+            {!editingRecommendations ? (
+              <Button size="sm" variant="outline" onClick={() => setEditingRecommendations(true)}>
+                <Edit className="mr-2 h-4 w-4" />
+                Edit
+              </Button>
             ) : (
-              <div className="text-sm whitespace-pre-wrap">
+              <Button size="sm" onClick={saveRecommendations} className="bg-sky-600 hover:bg-sky-700">
+                <Save className="mr-2 h-4 w-4" />
+                Save
+              </Button>
+            )}
+          </div>
+          
+          <div className="border-l-4 border-sky-500 pl-4 bg-slate-50 p-4 rounded-r-lg">
+            {editingRecommendations ? (
+              <Textarea
+                value={recommendations}
+                onChange={(e) => setRecommendations(e.target.value)}
+                placeholder="Enter overall recommendations for this oil analysis case..."
+                rows={6}
+                className="resize-none bg-white"
+              />
+            ) : (
+              <div className="text-slate-700 whitespace-pre-wrap">
                 {caseData.recommendations || (
-                  <p className="text-muted-foreground italic">No recommendations added yet. Click Edit to add recommendations.</p>
+                  <p className="text-slate-400 italic">No recommendations added yet. Click Edit to add recommendations.</p>
                 )}
               </div>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
-        {/* Individual Tests */}
-        {tests.map((test) => (
-          <Card key={test.id} className="pdf-section">
-            <CardHeader>
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <div className="flex items-center gap-3">
-                    <CardTitle>{test.test_name}</CardTitle>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => navigate(`/case/${caseId}/test/${test.id}/edit`)}
-                    >
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                  </div>
-                  <CardDescription>Performed on {format(new Date(test.created_at), "MMMM d, yyyy")}</CardDescription>
-                </div>
-                {test.image_url && (
-                  <img src={test.image_url} alt="Test" className="h-24 w-24 rounded object-cover border border-border" />
-                )}
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-border">
-                      <th className="text-left p-2 font-semibold">Parameter</th>
-                      <th className="text-left p-2 font-semibold">Lower Limit</th>
-                      <th className="text-left p-2 font-semibold">Upper Limit</th>
-                      <th className="text-left p-2 font-semibold">Actual Value</th>
-                      <th className="text-left p-2 font-semibold">Unit</th>
-                      {test.results.some((r) => r.particle_size) && (
-                        <th className="text-left p-2 font-semibold">Particle Size</th>
-                      )}
-                      <th className="text-left p-2 font-semibold">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {test.results.map((result) => (
-                      <tr key={result.id} className="border-b border-border/50">
-                        <td className="p-2">{result.parameter_name}</td>
-                        <td className="p-2">{result.lower_limit || "-"}</td>
-                        <td className="p-2">{result.upper_limit || "-"}</td>
-                        <td className="p-2 font-semibold">{result.actual_value}</td>
-                        <td className="p-2">{result.unit || "-"}</td>
-                        {test.results.some((r) => r.particle_size) && (
-                          <td className="p-2">{result.particle_size || "-"}</td>
-                        )}
-                        <td className="p-2">
-                          <Badge className={getConditionColor(result.status)}>{result.status}</Badge>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-
-              {/* Area Chart for Test */}
-              <ResponsiveContainer width="100%" height={250}>
-                <AreaChart data={test.results}>
-                  <defs>
-                    <linearGradient id={`colorActual-${test.id}`} x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.8} />
-                      <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0.1} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                  <XAxis 
-                    dataKey="parameter_name" 
-                    stroke="hsl(var(--muted-foreground))" 
-                    tick={{ fontSize: 11 }}
-                    interval={0}
-                  />
-                  <YAxis stroke="hsl(var(--muted-foreground))" />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: "hsl(var(--popover))",
-                      border: "1px solid hsl(var(--border))",
-                      borderRadius: "var(--radius)",
-                    }}
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="actual_value"
-                    stroke="hsl(var(--primary))"
-                    fillOpacity={1}
-                    fill={`url(#colorActual-${test.id})`}
-                    strokeWidth={2}
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-        ))}
+        <div className="pdf-section bg-white rounded-lg shadow-sm px-6 py-4">
+          <div className="border-t border-slate-200 pt-4 text-center text-sm text-slate-500">
+            <p className="font-semibold text-slate-700">{companySettings?.company_name || "Oil Analysis Lab"}</p>
+            <p>
+              {companySettings?.address && `${companySettings.address} | `}
+              {companySettings?.contact_number && `Phone: ${companySettings.contact_number} | `}
+              {companySettings?.email && `Email: ${companySettings.email}`}
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   );
