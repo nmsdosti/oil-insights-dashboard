@@ -21,8 +21,14 @@ serve(async (req) => {
       });
     }
 
+    // Create HTTP client that bypasses SSL certificate validation for external URLs
+    const client = Deno.createHttpClient({
+      caCerts: [],
+    });
+
     // Fetch the image from the external URL
     const response = await fetch(url, {
+      client,
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
       },
