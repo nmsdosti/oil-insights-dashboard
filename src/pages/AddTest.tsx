@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { ArrowLeft, Plus, Trash2, Save, Upload } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Save } from "lucide-react";
 import { Loader2 } from "lucide-react";
 
 interface Parameter {
@@ -32,6 +32,9 @@ const AddTest = () => {
   const [testName, setTestName] = useState("");
   const [imageUrl, setImageUrl] = useState("");
   const [imageComment, setImageComment] = useState("");
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string>("");
+  const [uploadingImage, setUploadingImage] = useState(false);
   const [parameters, setParameters] = useState<Parameter[]>([
     { id: "1", name: "", lowerLimit: "", upperLimit: "", actualValue: "", unit: "", particleSize: "" },
   ]);
@@ -50,6 +53,47 @@ const AddTest = () => {
     } else {
       setTemplates(data || []);
     }
+  };
+
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setImageFile(file);
+      setImagePreview(URL.createObjectURL(file));
+      setImageUrl(""); // Clear URL when file is selected
+    }
+  };
+
+  const uploadImage = async (): Promise<string | null> => {
+    if (!imageFile) return imageUrl || null;
+    
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      toast.error("You must be logged in to upload images");
+      return null;
+    }
+
+    setUploadingImage(true);
+    const fileExt = imageFile.name.split('.').pop();
+    const fileName = `${user.id}/${Date.now()}.${fileExt}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from('test-images')
+      .upload(fileName, imageFile);
+
+    if (uploadError) {
+      console.error('Upload error:', uploadError);
+      toast.error("Failed to upload image");
+      setUploadingImage(false);
+      return null;
+    }
+
+    const { data: { publicUrl } } = supabase.storage
+      .from('test-images')
+      .getPublicUrl(fileName);
+
+    setUploadingImage(false);
+    return publicUrl;
   };
 
   const loadTemplate = async (templateId: string) => {
@@ -116,12 +160,15 @@ const AddTest = () => {
 
     setLoading(true);
 
+    // Upload image if file selected
+    const finalImageUrl = await uploadImage();
+
     const { data: testData, error: testError } = await supabase
       .from("case_tests")
       .insert({
         case_id: caseId,
         test_name: testName,
-        image_url: imageUrl || null,
+        image_url: finalImageUrl,
         image_comment: imageComment || null,
       })
       .select()
@@ -173,6 +220,8 @@ const AddTest = () => {
         setTestName("");
         setImageUrl("");
         setImageComment("");
+        setImageFile(null);
+        setImagePreview("");
         setParameters([{ id: "1", name: "", lowerLimit: "", upperLimit: "", actualValue: "", unit: "", particleSize: "" }]);
         setSelectedTemplate("");
       } else {
@@ -276,22 +325,34 @@ const AddTest = () => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="image-url">Test Image URL (Optional)</Label>
+              <Label htmlFor="image-file">Test Image (Optional)</Label>
               <div className="flex gap-2">
                 <Input
-                  id="image-url"
-                  placeholder="https://example.com/image.jpg or imgbb.com link"
-                  value={imageUrl}
-                  onChange={(e) => setImageUrl(e.target.value)}
+                  id="image-file"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageSelect}
+                  className="cursor-pointer"
                 />
-                <Button variant="outline" size="icon" onClick={() => window.open("https://imgbb.com/", "_blank")}>
-                  <Upload className="h-4 w-4" />
-                </Button>
               </div>
-              <p className="text-xs text-muted-foreground">Upload your image to imgbb.com and paste the link here</p>
+              {(imagePreview || imageUrl) && (
+                <div className="mt-2">
+                  <img 
+                    src={imagePreview || imageUrl} 
+                    alt="Preview" 
+                    className="max-w-xs rounded-lg border"
+                  />
+                </div>
+              )}
+              {uploadingImage && (
+                <p className="text-xs text-muted-foreground flex items-center gap-2">
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                  Uploading image...
+                </p>
+              )}
             </div>
 
-            {imageUrl && (
+            {(imagePreview || imageUrl) && (
               <div className="space-y-2">
                 <Label htmlFor="image-comment">Image Comment (Optional)</Label>
                 <Input

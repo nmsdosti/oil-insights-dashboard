@@ -27,6 +27,9 @@ const EditTest = () => {
   const [testName, setTestName] = useState("");
   const [imageUrl, setImageUrl] = useState("");
   const [imageComment, setImageComment] = useState("");
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string>("");
+  const [uploadingImage, setUploadingImage] = useState(false);
   const [parameters, setParameters] = useState<Parameter[]>([]);
 
   useEffect(() => {
@@ -77,6 +80,47 @@ const EditTest = () => {
     setLoading(false);
   };
 
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setImageFile(file);
+      setImagePreview(URL.createObjectURL(file));
+      setImageUrl(""); // Clear URL when file is selected
+    }
+  };
+
+  const uploadImage = async (): Promise<string | null> => {
+    if (!imageFile) return imageUrl || null;
+    
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      toast.error("You must be logged in to upload images");
+      return null;
+    }
+
+    setUploadingImage(true);
+    const fileExt = imageFile.name.split('.').pop();
+    const fileName = `${user.id}/${Date.now()}.${fileExt}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from('test-images')
+      .upload(fileName, imageFile);
+
+    if (uploadError) {
+      console.error('Upload error:', uploadError);
+      toast.error("Failed to upload image");
+      setUploadingImage(false);
+      return null;
+    }
+
+    const { data: { publicUrl } } = supabase.storage
+      .from('test-images')
+      .getPublicUrl(fileName);
+
+    setUploadingImage(false);
+    return publicUrl;
+  };
+
   const addParameter = () => {
     setParameters([
       ...parameters,
@@ -121,12 +165,15 @@ const EditTest = () => {
 
     setSaving(true);
 
+    // Upload image if file selected
+    const finalImageUrl = await uploadImage();
+
     // Update test info
     const { error: testError } = await supabase
       .from("case_tests")
       .update({
         test_name: testName,
-        image_url: imageUrl || null,
+        image_url: finalImageUrl,
         image_comment: imageComment || null,
       })
       .eq("id", testId);
@@ -211,16 +258,34 @@ const EditTest = () => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="image-url">Test Image URL (Optional)</Label>
-              <Input
-                id="image-url"
-                placeholder="https://example.com/image.jpg"
-                value={imageUrl}
-                onChange={(e) => setImageUrl(e.target.value)}
-              />
+              <Label htmlFor="image-file">Test Image (Optional)</Label>
+              <div className="flex gap-2">
+                <Input
+                  id="image-file"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageSelect}
+                  className="cursor-pointer"
+                />
+              </div>
+              {(imagePreview || imageUrl) && (
+                <div className="mt-2">
+                  <img 
+                    src={imagePreview || imageUrl} 
+                    alt="Preview" 
+                    className="max-w-xs rounded-lg border"
+                  />
+                </div>
+              )}
+              {uploadingImage && (
+                <p className="text-xs text-muted-foreground flex items-center gap-2">
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                  Uploading image...
+                </p>
+              )}
             </div>
 
-            {imageUrl && (
+            {(imagePreview || imageUrl) && (
               <div className="space-y-2">
                 <Label htmlFor="image-comment">Image Comment (Optional)</Label>
                 <Input
