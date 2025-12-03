@@ -428,40 +428,42 @@ const CaseDashboard = () => {
             <div className="w-1 h-6 bg-sky-500 rounded"></div>
             EXECUTIVE SUMMARY
           </h3>
-          <div className={`flex items-start gap-4 p-4 rounded-lg ${conditionInfo.bgColor}`}>
-            <div 
-              className="w-16 h-16 rounded-full flex items-center justify-center shrink-0"
-              style={{ backgroundColor: conditionInfo.color }}
-            >
-              <ConditionIcon className="w-8 h-8 text-white" />
+          <div className={`p-4 rounded-lg ${conditionInfo.bgColor}`}>
+            <div className="flex items-center gap-4 mb-2">
+              <div 
+                className="w-14 h-14 rounded-full flex items-center justify-center"
+                style={{ backgroundColor: conditionInfo.color }}
+              >
+                <ConditionIcon className="w-7 h-7 text-white" />
+              </div>
+              <div>
+                <h4 className={`text-2xl font-bold leading-tight ${conditionInfo.textColor}`}>
+                  {conditionInfo.label}
+                </h4>
+                <p className="text-sm text-slate-600 leading-tight">CONDITION</p>
+              </div>
             </div>
-            <div>
-              <h4 className={`text-2xl font-bold ${conditionInfo.textColor}`}>
-                {conditionInfo.label}
-              </h4>
-              <p className="text-sm text-slate-600 mt-1">CONDITION</p>
-              <p className="text-slate-700 mt-2">{conditionInfo.message}</p>
-            </div>
+            <p className="text-slate-700 text-sm leading-relaxed">{conditionInfo.message}</p>
           </div>
           
           <div className="grid grid-cols-2 gap-4 mt-4">
             <div className="bg-slate-50 rounded-lg p-4">
-              <p className="text-sm text-slate-500 mb-1">Machine Condition</p>
-              <Badge className={`text-base px-3 py-1 ${
+              <p className="text-sm text-slate-500 mb-2 leading-tight">Machine Condition</p>
+              <span className={`inline-block text-sm font-semibold px-3 py-1 rounded ${
                 caseData.machine_condition === "NORMAL" ? "bg-green-500" :
                 caseData.machine_condition === "ALERT" ? "bg-amber-500" : "bg-red-500"
               } text-white`}>
                 {caseData.machine_condition}
-              </Badge>
+              </span>
             </div>
             <div className="bg-slate-50 rounded-lg p-4">
-              <p className="text-sm text-slate-500 mb-1">Lubricant Condition</p>
-              <Badge className={`text-base px-3 py-1 ${
+              <p className="text-sm text-slate-500 mb-2 leading-tight">Lubricant Condition</p>
+              <span className={`inline-block text-sm font-semibold px-3 py-1 rounded ${
                 caseData.lubricant_condition === "NORMAL" ? "bg-green-500" :
                 caseData.lubricant_condition === "ALERT" ? "bg-amber-500" : "bg-red-500"
               } text-white`}>
                 {caseData.lubricant_condition}
-              </Badge>
+              </span>
             </div>
           </div>
         </div>
