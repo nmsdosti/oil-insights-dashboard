@@ -191,24 +191,39 @@ const CaseDashboard = () => {
     };
   };
 
-  // Convert external image to base64 using edge function proxy to avoid CORS issues
+  // Convert external image to base64 using canvas approach
   const convertImageToBase64 = async (imageUrl: string): Promise<string | null> => {
-    try {
-      // Use edge function to proxy the image and convert to base64
-      const { data, error } = await supabase.functions.invoke('proxy-image', {
-        body: { url: imageUrl }
-      });
-
-      if (error) {
-        console.error('Proxy error:', error);
-        return null;
-      }
-
-      return data?.dataUrl || null;
-    } catch (err) {
-      console.error('Error converting image:', err);
-      return null;
-    }
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      
+      img.onload = () => {
+        try {
+          const canvas = document.createElement('canvas');
+          canvas.width = img.naturalWidth || img.width;
+          canvas.height = img.naturalHeight || img.height;
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+            ctx.drawImage(img, 0, 0);
+            const dataUrl = canvas.toDataURL('image/png');
+            resolve(dataUrl);
+          } else {
+            resolve(null);
+          }
+        } catch (err) {
+          console.error('Canvas conversion failed:', err);
+          resolve(null);
+        }
+      };
+      
+      img.onerror = () => {
+        console.error('Image failed to load:', imageUrl);
+        resolve(null);
+      };
+      
+      // Add cache buster to avoid CORS cache issues
+      img.src = imageUrl + (imageUrl.includes('?') ? '&' : '?') + '_t=' + Date.now();
+    });
   };
 
   const generatePDF = async () => {
@@ -228,6 +243,9 @@ const CaseDashboard = () => {
           const base64 = await convertImageToBase64(img.src);
           if (base64) {
             img.src = base64;
+          } else {
+            // Hide images that can't be converted to avoid blank space
+            img.style.display = 'none';
           }
         }
       }
@@ -273,9 +291,10 @@ const CaseDashboard = () => {
         }
       }
 
-      // Restore original image sources
+      // Restore original image sources and visibility
       for (const [img, src] of originalSrcs) {
         img.src = src;
+        img.style.display = '';
       }
 
       pdf.save(`oil-analysis-${caseData?.customer_name}-${format(new Date(), "yyyy-MM-dd")}.pdf`);
