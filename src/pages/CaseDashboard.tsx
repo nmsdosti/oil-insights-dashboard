@@ -191,13 +191,59 @@ const CaseDashboard = () => {
     };
   };
 
+  // Convert external image to base64 to avoid CORS issues in PDF
+  const convertImageToBase64 = async (imgElement: HTMLImageElement): Promise<string | null> => {
+    try {
+      const response = await fetch(imgElement.src, { mode: 'cors' });
+      const blob = await response.blob();
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.onerror = () => resolve(null);
+        reader.readAsDataURL(blob);
+      });
+    } catch {
+      // If fetch fails, try canvas approach
+      try {
+        const canvas = document.createElement('canvas');
+        canvas.width = imgElement.naturalWidth || imgElement.width;
+        canvas.height = imgElement.naturalHeight || imgElement.height;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(imgElement, 0, 0);
+          return canvas.toDataURL('image/png');
+        }
+      } catch {
+        return null;
+      }
+      return null;
+    }
+  };
+
   const generatePDF = async () => {
     if (!dashboardRef.current) return;
 
     setGenerating(true);
-    toast.info("Generating PDF...");
+    toast.info("Generating PDF... Converting images...");
 
     try {
+      // Pre-convert all external images to base64
+      const images = dashboardRef.current.querySelectorAll('img');
+      const originalSrcs = new Map<HTMLImageElement, string>();
+      
+      for (const img of images) {
+        if (img.src && !img.src.startsWith('data:')) {
+          originalSrcs.set(img, img.src);
+          const base64 = await convertImageToBase64(img);
+          if (base64) {
+            img.src = base64;
+          }
+        }
+      }
+
+      // Wait for images to update
+      await new Promise(resolve => setTimeout(resolve, 100));
+
       const pdf = new jsPDF("p", "mm", "a4");
       const pageWidth = pdf.internal.pageSize.getWidth();
       const pageHeight = pdf.internal.pageSize.getHeight();
@@ -214,6 +260,7 @@ const CaseDashboard = () => {
           scale: 2,
           logging: false,
           useCORS: true,
+          allowTaint: true,
           backgroundColor: "#ffffff",
         });
 
@@ -233,6 +280,11 @@ const CaseDashboard = () => {
           pdf.addPage();
           yPosition = margin;
         }
+      }
+
+      // Restore original image sources
+      for (const [img, src] of originalSrcs) {
+        img.src = src;
       }
 
       pdf.save(`oil-analysis-${caseData?.customer_name}-${format(new Date(), "yyyy-MM-dd")}.pdf`);
