@@ -19,23 +19,35 @@ interface Case {
 const Cases = () => {
   const [cases, setCases] = useState<Case[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchCases();
   }, []);
 
-  const fetchCases = async () => {
-    const { data, error } = await supabase
-      .from("cases")
-      .select("*")
-      .order("created_at", { ascending: false });
+  const fetchCases = async (retryCount = 0) => {
+    try {
+      setError(null);
+      const { data, error: fetchError } = await supabase
+        .from("cases")
+        .select("*")
+        .order("created_at", { ascending: false });
 
-    if (error) {
-      console.error("Error fetching cases:", error);
-    } else {
+      if (fetchError) {
+        throw fetchError;
+      }
       setCases((data as Case[]) || []);
+    } catch (err: any) {
+      console.error("Error fetching cases:", err);
+      if (retryCount < 2) {
+        // Retry up to 2 times with delay
+        setTimeout(() => fetchCases(retryCount + 1), 1000);
+        return;
+      }
+      setError("Failed to load cases. Please check your connection and try again.");
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const getConditionVariant = (condition: string) => {
@@ -68,6 +80,23 @@ const Cases = () => {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <Card className="border-destructive">
+          <CardContent className="flex flex-col items-center justify-center py-16 text-center">
+            <AlertCircle className="h-16 w-16 text-destructive mb-4" />
+            <h3 className="text-xl font-semibold mb-2">Error Loading Cases</h3>
+            <p className="text-muted-foreground mb-6">{error}</p>
+            <Button onClick={() => { setLoading(true); fetchCases(); }}>
+              Try Again
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     );
   }
