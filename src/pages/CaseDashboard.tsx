@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { ArrowLeft, Plus, Download, Loader2, Edit, Save, CheckCircle, AlertTriangle, XCircle, FileSpreadsheet, FileText, ChevronDown } from "lucide-react";
+import { ArrowLeft, Plus, Download, Loader2, Edit, Save, CheckCircle, AlertTriangle, XCircle, FileSpreadsheet, FileText, ChevronDown, QrCode, Copy, Link2 } from "lucide-react";
 import { format } from "date-fns";
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
@@ -18,6 +18,7 @@ import ExcelJS from "exceljs";
 import { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell, WidthType, AlignmentType, BorderStyle, HeadingLevel } from "docx";
 import { saveAs } from "file-saver";
 import { toast } from "sonner";
+import QRCode from "qrcode";
 
 interface CaseData {
   id: string;
@@ -29,6 +30,7 @@ interface CaseData {
   lubricant_condition: string;
   recommendations: string;
   created_at: string;
+  access_token: string;
 }
 
 interface TestData {
@@ -78,6 +80,36 @@ const CaseDashboard = () => {
   const [generating, setGenerating] = useState(false);
   const [editingRecommendations, setEditingRecommendations] = useState(false);
   const [recommendations, setRecommendations] = useState("");
+  const [qrCodeDataUrl, setQrCodeDataUrl] = useState<string>("");
+
+  const getPublicReportUrl = () => {
+    const baseUrl = window.location.origin;
+    return `${baseUrl}/report/${caseData?.access_token}`;
+  };
+
+  const generateQrCode = async (token: string) => {
+    try {
+      const baseUrl = window.location.origin;
+      const url = `${baseUrl}/report/${token}`;
+      const qrDataUrl = await QRCode.toDataURL(url, {
+        width: 150,
+        margin: 2,
+        color: {
+          dark: '#0284c7',
+          light: '#ffffff',
+        },
+      });
+      setQrCodeDataUrl(qrDataUrl);
+    } catch (err) {
+      console.error("Error generating QR code:", err);
+    }
+  };
+
+  const copyCustomerLink = () => {
+    const url = getPublicReportUrl();
+    navigator.clipboard.writeText(url);
+    toast.success("Customer access link copied to clipboard!");
+  };
 
   useEffect(() => {
     fetchData();
@@ -96,8 +128,13 @@ const CaseDashboard = () => {
       return;
     }
 
-    setCaseData(caseInfo);
+    setCaseData(caseInfo as CaseData);
     setRecommendations(caseInfo.recommendations || "");
+    
+    // Generate QR code for customer access
+    if (caseInfo.access_token) {
+      generateQrCode(caseInfo.access_token);
+    }
 
     const { data: testsData, error: testsError } = await supabase
       .from("case_tests")
@@ -788,6 +825,10 @@ const CaseDashboard = () => {
                 Add Test
               </Link>
             </Button>
+            <Button variant="outline" onClick={copyCustomerLink} className="border-sky-200 text-sky-700 hover:bg-sky-50">
+              <Link2 className="mr-2 h-4 w-4" />
+              Copy Customer Link
+            </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button disabled={generating} className="bg-sky-600 hover:bg-sky-700">
@@ -1095,13 +1136,21 @@ const CaseDashboard = () => {
         </div>
 
         <div className="pdf-section bg-white rounded-lg shadow-sm px-6 py-4">
-          <div className="border-t border-slate-200 pt-4 text-center text-sm text-slate-500">
-            <p className="font-semibold text-slate-700 text-center">{companySettings?.company_name || "Oil Analysis Lab"}</p>
-            <p className="text-center">
-              {companySettings?.address && `${companySettings.address} | `}
-              {companySettings?.contact_number && `Phone: ${companySettings.contact_number} | `}
-              {companySettings?.email && `Email: ${companySettings.email}`}
-            </p>
+          <div className="border-t border-slate-200 pt-4 flex items-center justify-between">
+            <div className="text-sm text-slate-500">
+              <p className="font-semibold text-slate-700">{companySettings?.company_name || "Oil Analysis Lab"}</p>
+              <p>
+                {companySettings?.address && `${companySettings.address} | `}
+                {companySettings?.contact_number && `Phone: ${companySettings.contact_number} | `}
+                {companySettings?.email && `Email: ${companySettings.email}`}
+              </p>
+            </div>
+            {qrCodeDataUrl && (
+              <div className="text-center">
+                <img src={qrCodeDataUrl} alt="Scan for online report" className="w-24 h-24 mx-auto" />
+                <p className="text-xs text-slate-500 mt-1">Scan for online report</p>
+              </div>
+            )}
           </div>
         </div>
       </div>
