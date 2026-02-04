@@ -14,6 +14,7 @@ import EditTest from "./pages/EditTest";
 import CaseDashboard from "./pages/CaseDashboard";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
+import PublicReport from "./pages/PublicReport";
 
 const queryClient = new QueryClient();
 
@@ -25,6 +26,7 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/auth" element={<Auth />} />
+          <Route path="/report/:token" element={<PublicReport />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route
             path="/"
