@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Plus, Download, Loader2, Edit, Save, CheckCircle, AlertTriangle, XCircle } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { ArrowLeft, Plus, Download, Loader2, Edit, Save, CheckCircle, AlertTriangle, XCircle, FileSpreadsheet, FileText, ChevronDown } from "lucide-react";
 import { format } from "date-fns";
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
@@ -13,6 +14,9 @@ import {
 } from "recharts";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
+import ExcelJS from "exceljs";
+import { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell, WidthType, AlignmentType, BorderStyle, HeadingLevel } from "docx";
+import { saveAs } from "file-saver";
 import { toast } from "sonner";
 
 interface CaseData {
@@ -320,6 +324,411 @@ const CaseDashboard = () => {
     setGenerating(false);
   };
 
+  const generateExcel = async () => {
+    if (!caseData) return;
+    setGenerating(true);
+    toast.info("Generating Excel report...");
+
+    try {
+      const workbook = new ExcelJS.Workbook();
+      workbook.creator = companySettings?.company_name || "Oil Analysis Lab";
+      workbook.created = new Date();
+
+      const sheet = workbook.addWorksheet("Oil Analysis Report");
+
+      // Set column widths
+      sheet.columns = [
+        { width: 25 },
+        { width: 20 },
+        { width: 20 },
+        { width: 20 },
+        { width: 15 },
+        { width: 20 },
+        { width: 15 },
+      ];
+
+      // Header
+      sheet.mergeCells("A1:G1");
+      const headerCell = sheet.getCell("A1");
+      headerCell.value = companySettings?.company_name || "Oil Analysis Lab";
+      headerCell.font = { bold: true, size: 18, color: { argb: "FFFFFFFF" } };
+      headerCell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF0284C7" } };
+      headerCell.alignment = { horizontal: "center", vertical: "middle" };
+      sheet.getRow(1).height = 35;
+
+      sheet.mergeCells("A2:G2");
+      const titleCell = sheet.getCell("A2");
+      titleCell.value = "Comprehensive Oil Analysis Report";
+      titleCell.font = { bold: true, size: 14, color: { argb: "FFFFFFFF" } };
+      titleCell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF0891B2" } };
+      titleCell.alignment = { horizontal: "center", vertical: "middle" };
+      sheet.getRow(2).height = 28;
+
+      // Client Info
+      let row = 4;
+      const addInfoRow = (label: string, value: string) => {
+        sheet.getCell(`A${row}`).value = label;
+        sheet.getCell(`A${row}`).font = { bold: true };
+        sheet.mergeCells(`B${row}:D${row}`);
+        sheet.getCell(`B${row}`).value = value;
+        row++;
+      };
+
+      addInfoRow("CLIENT:", caseData.customer_name);
+      if (caseData.customer_email) addInfoRow("EMAIL:", caseData.customer_email);
+      if (caseData.customer_mobile) addInfoRow("MOBILE:", caseData.customer_mobile);
+      if (caseData.customer_address) addInfoRow("ADDRESS:", caseData.customer_address);
+      addInfoRow("REPORT DATE:", format(new Date(), "MMM d, yyyy"));
+      addInfoRow("SAMPLE DATE:", format(new Date(caseData.created_at), "MMM d, yyyy"));
+
+      row += 1;
+
+      // Executive Summary
+      sheet.mergeCells(`A${row}:G${row}`);
+      const summaryHeader = sheet.getCell(`A${row}`);
+      summaryHeader.value = "EXECUTIVE SUMMARY";
+      summaryHeader.font = { bold: true, size: 12 };
+      summaryHeader.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFE2E8F0" } };
+      row++;
+
+      const condInfo = getConditionInfo(caseData.machine_condition, caseData.lubricant_condition);
+      addInfoRow("Overall Status:", condInfo.label);
+      addInfoRow("Machine Condition:", caseData.machine_condition);
+      addInfoRow("Lubricant Condition:", caseData.lubricant_condition);
+      sheet.mergeCells(`A${row}:G${row}`);
+      sheet.getCell(`A${row}`).value = condInfo.message;
+      sheet.getCell(`A${row}`).alignment = { wrapText: true };
+      sheet.getRow(row).height = 40;
+      row += 2;
+
+      // Status Summary
+      sheet.mergeCells(`A${row}:G${row}`);
+      const statusHeader = sheet.getCell(`A${row}`);
+      statusHeader.value = "STATUS SUMMARY";
+      statusHeader.font = { bold: true, size: 12 };
+      statusHeader.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFE2E8F0" } };
+      row++;
+
+      const allResults = tests.flatMap((test) => test.results);
+      const statusCounts = {
+        NORMAL: allResults.filter((r) => r.status === "NORMAL").length,
+        ALERT: allResults.filter((r) => r.status === "ALERT").length,
+        ALARM: allResults.filter((r) => r.status === "ALARM").length,
+      };
+
+      addInfoRow("Normal Parameters:", statusCounts.NORMAL.toString());
+      addInfoRow("Alert Parameters:", statusCounts.ALERT.toString());
+      addInfoRow("Alarm Parameters:", statusCounts.ALARM.toString());
+      row++;
+
+      // Test Results
+      for (const test of tests) {
+        sheet.mergeCells(`A${row}:G${row}`);
+        const testHeader = sheet.getCell(`A${row}`);
+        testHeader.value = `TEST RESULTS - ${test.test_name.toUpperCase()}`;
+        testHeader.font = { bold: true, size: 12, color: { argb: "FFFFFFFF" } };
+        testHeader.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF0284C7" } };
+        row++;
+
+        // Table headers
+        const headers = ["TEST PARAMETER", "LOWER LIMIT", "UPPER LIMIT", "ACTUAL VALUE", "UNIT", "PARTICLE SIZE", "STATUS"];
+        headers.forEach((header, i) => {
+          const cell = sheet.getCell(row, i + 1);
+          cell.value = header;
+          cell.font = { bold: true, color: { argb: "FFFFFFFF" } };
+          cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF0284C7" } };
+          cell.alignment = { horizontal: "center" };
+          cell.border = { top: { style: "thin" }, bottom: { style: "thin" }, left: { style: "thin" }, right: { style: "thin" } };
+        });
+        row++;
+
+        // Table data
+        for (const result of test.results) {
+          const values = [
+            result.parameter_name,
+            result.lower_limit?.toString() || "-",
+            result.upper_limit?.toString() || "-",
+            result.actual_value.toString(),
+            result.unit || "-",
+            result.particle_size || "-",
+            result.status,
+          ];
+          values.forEach((val, i) => {
+            const cell = sheet.getCell(row, i + 1);
+            cell.value = val;
+            cell.alignment = { horizontal: "center" };
+            cell.border = { top: { style: "thin" }, bottom: { style: "thin" }, left: { style: "thin" }, right: { style: "thin" } };
+            
+            // Color status column
+            if (i === 6) {
+              if (val === "NORMAL") cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF22C55E" } };
+              else if (val === "ALERT") cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFF59E0B" } };
+              else if (val === "ALARM") cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFEF4444" } };
+              cell.font = { color: { argb: "FFFFFFFF" }, bold: true };
+            }
+          });
+          row++;
+        }
+
+        if (test.image_comment) {
+          sheet.mergeCells(`A${row}:G${row}`);
+          sheet.getCell(`A${row}`).value = `Image Comment: ${test.image_comment}`;
+          sheet.getCell(`A${row}`).font = { italic: true };
+          row++;
+        }
+        row++;
+      }
+
+      // Recommendations
+      sheet.mergeCells(`A${row}:G${row}`);
+      const recHeader = sheet.getCell(`A${row}`);
+      recHeader.value = "DATA INTERPRETATION & RECOMMENDATIONS";
+      recHeader.font = { bold: true, size: 12 };
+      recHeader.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFE2E8F0" } };
+      row++;
+
+      sheet.mergeCells(`A${row}:G${row + 3}`);
+      const recCell = sheet.getCell(`A${row}`);
+      recCell.value = caseData.recommendations || "No recommendations added yet.";
+      recCell.alignment = { wrapText: true, vertical: "top" };
+      row += 5;
+
+      // Footer
+      sheet.mergeCells(`A${row}:G${row}`);
+      const footerCell = sheet.getCell(`A${row}`);
+      footerCell.value = `${companySettings?.company_name || "Oil Analysis Lab"} | ${companySettings?.address || ""} | ${companySettings?.contact_number || ""} | ${companySettings?.email || ""}`;
+      footerCell.alignment = { horizontal: "center" };
+      footerCell.font = { size: 10, color: { argb: "FF64748B" } };
+
+      // Save file
+      const buffer = await workbook.xlsx.writeBuffer();
+      const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+      saveAs(blob, `oil-analysis-${caseData.customer_name}-${format(new Date(), "yyyy-MM-dd")}.xlsx`);
+      toast.success("Excel report generated successfully!");
+    } catch (error) {
+      console.error("Error generating Excel:", error);
+      toast.error("Failed to generate Excel report");
+    }
+
+    setGenerating(false);
+  };
+
+  const generateWord = async () => {
+    if (!caseData) return;
+    setGenerating(true);
+    toast.info("Generating Word document...");
+
+    try {
+      const condInfo = getConditionInfo(caseData.machine_condition, caseData.lubricant_condition);
+      const allResults = tests.flatMap((test) => test.results);
+      const statusCounts = {
+        NORMAL: allResults.filter((r) => r.status === "NORMAL").length,
+        ALERT: allResults.filter((r) => r.status === "ALERT").length,
+        ALARM: allResults.filter((r) => r.status === "ALARM").length,
+      };
+
+      const children: any[] = [];
+
+      // Header
+      children.push(
+        new Paragraph({
+          children: [
+            new TextRun({
+              text: companySettings?.company_name || "Oil Analysis Lab",
+              bold: true,
+              size: 36,
+              color: "0284C7",
+            }),
+          ],
+          alignment: AlignmentType.CENTER,
+          spacing: { after: 200 },
+        }),
+        new Paragraph({
+          children: [
+            new TextRun({
+              text: "Comprehensive Oil Analysis Report",
+              bold: true,
+              size: 28,
+              color: "0891B2",
+            }),
+          ],
+          alignment: AlignmentType.CENTER,
+          spacing: { after: 400 },
+        })
+      );
+
+      // Client Info
+      const infoItems = [
+        { label: "CLIENT:", value: caseData.customer_name },
+        ...(caseData.customer_email ? [{ label: "EMAIL:", value: caseData.customer_email }] : []),
+        ...(caseData.customer_mobile ? [{ label: "MOBILE:", value: caseData.customer_mobile }] : []),
+        { label: "REPORT DATE:", value: format(new Date(), "MMM d, yyyy") },
+        { label: "SAMPLE DATE:", value: format(new Date(caseData.created_at), "MMM d, yyyy") },
+      ];
+
+      infoItems.forEach(({ label, value }) => {
+        children.push(
+          new Paragraph({
+            children: [
+              new TextRun({ text: label + " ", bold: true }),
+              new TextRun({ text: value }),
+            ],
+            spacing: { after: 100 },
+          })
+        );
+      });
+
+      // Executive Summary
+      children.push(
+        new Paragraph({
+          text: "EXECUTIVE SUMMARY",
+          heading: HeadingLevel.HEADING_2,
+          spacing: { before: 400, after: 200 },
+        }),
+        new Paragraph({
+          children: [
+            new TextRun({ text: "Overall Status: ", bold: true }),
+            new TextRun({
+              text: condInfo.label,
+              bold: true,
+              color: condInfo.label === "NORMAL" ? "22C55E" : condInfo.label === "ALERT" ? "F59E0B" : "EF4444",
+            }),
+          ],
+          spacing: { after: 100 },
+        }),
+        new Paragraph({
+          children: [
+            new TextRun({ text: "Machine Condition: ", bold: true }),
+            new TextRun({ text: caseData.machine_condition }),
+          ],
+          spacing: { after: 100 },
+        }),
+        new Paragraph({
+          children: [
+            new TextRun({ text: "Lubricant Condition: ", bold: true }),
+            new TextRun({ text: caseData.lubricant_condition }),
+          ],
+          spacing: { after: 100 },
+        }),
+        new Paragraph({
+          text: condInfo.message,
+          spacing: { after: 200 },
+        }),
+        new Paragraph({
+          children: [
+            new TextRun({ text: `Normal: ${statusCounts.NORMAL} | Alert: ${statusCounts.ALERT} | Alarm: ${statusCounts.ALARM}`, italics: true }),
+          ],
+          spacing: { after: 400 },
+        })
+      );
+
+      // Test Results
+      for (const test of tests) {
+        children.push(
+          new Paragraph({
+            text: `TEST RESULTS - ${test.test_name.toUpperCase()}`,
+            heading: HeadingLevel.HEADING_2,
+            spacing: { before: 300, after: 200 },
+          })
+        );
+
+        const hasParticleSize = test.results.some((r) => r.particle_size);
+        const headers = ["Parameter", "Lower", "Upper", "Actual", "Unit", ...(hasParticleSize ? ["Particle Size"] : []), "Status"];
+
+        const tableRows = [
+          new TableRow({
+            children: headers.map((h) =>
+              new TableCell({
+                children: [new Paragraph({ text: h, alignment: AlignmentType.CENTER })],
+                shading: { fill: "0284C7" },
+                width: { size: 100 / headers.length, type: WidthType.PERCENTAGE },
+              })
+            ),
+          }),
+          ...test.results.map(
+            (result) =>
+              new TableRow({
+                children: [
+                  new TableCell({ children: [new Paragraph({ text: result.parameter_name, alignment: AlignmentType.CENTER })] }),
+                  new TableCell({ children: [new Paragraph({ text: result.lower_limit?.toString() || "-", alignment: AlignmentType.CENTER })] }),
+                  new TableCell({ children: [new Paragraph({ text: result.upper_limit?.toString() || "-", alignment: AlignmentType.CENTER })] }),
+                  new TableCell({ children: [new Paragraph({ text: result.actual_value.toString(), alignment: AlignmentType.CENTER })] }),
+                  new TableCell({ children: [new Paragraph({ text: result.unit || "-", alignment: AlignmentType.CENTER })] }),
+                  ...(hasParticleSize ? [new TableCell({ children: [new Paragraph({ text: result.particle_size || "-", alignment: AlignmentType.CENTER })] })] : []),
+                  new TableCell({
+                    children: [new Paragraph({ text: result.status, alignment: AlignmentType.CENTER })],
+                    shading: {
+                      fill: result.status === "NORMAL" ? "22C55E" : result.status === "ALERT" ? "F59E0B" : "EF4444",
+                    },
+                  }),
+                ],
+              })
+          ),
+        ];
+
+        children.push(
+          new Table({
+            rows: tableRows,
+            width: { size: 100, type: WidthType.PERCENTAGE },
+          })
+        );
+
+        if (test.image_comment) {
+          children.push(
+            new Paragraph({
+              children: [
+                new TextRun({ text: "Image Comment: ", bold: true }),
+                new TextRun({ text: test.image_comment, italics: true }),
+              ],
+              spacing: { before: 200, after: 200 },
+            })
+          );
+        }
+      }
+
+      // Recommendations
+      children.push(
+        new Paragraph({
+          text: "DATA INTERPRETATION & RECOMMENDATIONS",
+          heading: HeadingLevel.HEADING_2,
+          spacing: { before: 400, after: 200 },
+        }),
+        new Paragraph({
+          text: caseData.recommendations || "No recommendations added yet.",
+          spacing: { after: 400 },
+        })
+      );
+
+      // Footer
+      children.push(
+        new Paragraph({
+          children: [
+            new TextRun({
+              text: `${companySettings?.company_name || "Oil Analysis Lab"} | ${companySettings?.address || ""} | ${companySettings?.contact_number || ""} | ${companySettings?.email || ""}`,
+              size: 18,
+              color: "64748B",
+            }),
+          ],
+          alignment: AlignmentType.CENTER,
+          spacing: { before: 400 },
+        })
+      );
+
+      const doc = new Document({
+        sections: [{ children }],
+      });
+
+      const buffer = await Packer.toBlob(doc);
+      saveAs(buffer, `oil-analysis-${caseData.customer_name}-${format(new Date(), "yyyy-MM-dd")}.docx`);
+      toast.success("Word document generated successfully!");
+    } catch (error) {
+      console.error("Error generating Word:", error);
+      toast.error("Failed to generate Word document");
+    }
+
+    setGenerating(false);
+  };
+
   if (loading) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
@@ -379,10 +788,29 @@ const CaseDashboard = () => {
                 Add Test
               </Link>
             </Button>
-            <Button onClick={generatePDF} disabled={generating} className="bg-sky-600 hover:bg-sky-700">
-              {generating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
-              Export PDF
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button disabled={generating} className="bg-sky-600 hover:bg-sky-700">
+                  {generating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
+                  Export
+                  <ChevronDown className="ml-2 h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={generatePDF} className="cursor-pointer">
+                  <Download className="mr-2 h-4 w-4" />
+                  Export as PDF
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={generateExcel} className="cursor-pointer">
+                  <FileSpreadsheet className="mr-2 h-4 w-4" />
+                  Export as Excel
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={generateWord} className="cursor-pointer">
+                  <FileText className="mr-2 h-4 w-4" />
+                  Export as Word
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </div>
