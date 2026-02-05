@@ -280,6 +280,30 @@ const CaseDashboard = () => {
         (el as HTMLElement).style.display = 'none';
       });
 
+     // Force desktop layout for PDF - set fixed width to ensure 3-column grid
+     const originalStyle = dashboardRef.current.getAttribute('style') || '';
+     dashboardRef.current.style.width = '1200px';
+     dashboardRef.current.style.maxWidth = '1200px';
+     dashboardRef.current.style.minWidth = '1200px';
+
+     // Force grid items to be in 3 columns
+     const gridElements = dashboardRef.current.querySelectorAll('.grid.grid-cols-1.md\\:grid-cols-3');
+     gridElements.forEach((el) => {
+       (el as HTMLElement).style.gridTemplateColumns = 'repeat(3, 1fr)';
+     });
+
+     // Force 2-column grids
+     const grid2Elements = dashboardRef.current.querySelectorAll('.grid.grid-cols-2');
+     grid2Elements.forEach((el) => {
+       (el as HTMLElement).style.gridTemplateColumns = 'repeat(2, 1fr)';
+     });
+
+     // Force 4-column grids for client info
+     const grid4Elements = dashboardRef.current.querySelectorAll('.grid.grid-cols-2.md\\:grid-cols-4');
+     grid4Elements.forEach((el) => {
+       (el as HTMLElement).style.gridTemplateColumns = 'repeat(4, 1fr)';
+     });
+
       // Pre-convert all external images to base64
       const images = dashboardRef.current.querySelectorAll('img');
       const originalSrcs = new Map<HTMLImageElement, string>();
@@ -318,8 +342,8 @@ const CaseDashboard = () => {
           useCORS: true,
           allowTaint: true,
           backgroundColor: "#ffffff",
-          windowWidth: section.scrollWidth,
-          windowHeight: section.scrollHeight,
+         windowWidth: 1200,
+         width: 1200,
         });
 
         const imgData = canvas.toDataURL("image/png");
@@ -345,6 +369,20 @@ const CaseDashboard = () => {
         img.src = src;
         img.style.display = '';
       }
+
+     // Restore grid layouts
+     gridElements.forEach((el) => {
+       (el as HTMLElement).style.gridTemplateColumns = '';
+     });
+     grid2Elements.forEach((el) => {
+       (el as HTMLElement).style.gridTemplateColumns = '';
+     });
+     grid4Elements.forEach((el) => {
+       (el as HTMLElement).style.gridTemplateColumns = '';
+     });
+
+     // Restore original container style
+     dashboardRef.current.setAttribute('style', originalStyle);
 
       // Restore no-print elements
       noPrintElements.forEach((el) => {
