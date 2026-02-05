@@ -28,7 +28,7 @@ export const AppLayout = ({ children }: AppLayoutProps) => {
           <div className="flex items-center gap-8">
             <Link to="/" className="flex items-center gap-2 font-bold text-foreground hover:text-primary transition-colors">
               <Beaker className="h-6 w-6 text-primary" />
-              <span className="text-lg">Oil Analysis Lab</span>
+              <span className="text-lg">TM INDUSTRIAL SOLUTION</span>
             </Link>
             <nav className="hidden md:flex items-center gap-6">
               <Link
