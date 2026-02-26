@@ -11,6 +11,7 @@ import Cases from "./pages/Cases";
 import NewCase from "./pages/NewCase";
 import AddTest from "./pages/AddTest";
 import EditTest from "./pages/EditTest";
+import EditCase from "./pages/EditCase";
 import CaseDashboard from "./pages/CaseDashboard";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
@@ -28,76 +29,14 @@ const App = () => (
           <Route path="/auth" element={<Auth />} />
           <Route path="/report/:token" element={<PublicReport />} />
           <Route path="/reset-password" element={<ResetPassword />} />
-          <Route
-            path="/"
-            element={
-              <AuthGuard>
-                <AppLayout>
-                  <Cases />
-                </AppLayout>
-              </AuthGuard>
-            }
-          />
-          <Route
-            path="/new-case"
-            element={
-              <AuthGuard>
-                <AppLayout>
-                  <NewCase />
-                </AppLayout>
-              </AuthGuard>
-            }
-          />
-          <Route
-            path="/case/:caseId/add-test"
-            element={
-              <AuthGuard>
-                <AppLayout>
-                  <AddTest />
-                </AppLayout>
-              </AuthGuard>
-            }
-          />
-          <Route
-            path="/case/:caseId/test/:testId/edit"
-            element={
-              <AuthGuard>
-                <AppLayout>
-                  <EditTest />
-                </AppLayout>
-              </AuthGuard>
-            }
-          />
-          <Route
-            path="/case/:caseId"
-            element={
-              <AuthGuard>
-                <AppLayout>
-                  <CaseDashboard />
-                </AppLayout>
-              </AuthGuard>
-            }
-          />
-          <Route
-            path="/case/:caseId/dashboard"
-            element={
-              <AuthGuard>
-                <AppLayout>
-                  <CaseDashboard />
-                </AppLayout>
-              </AuthGuard>
-            }
-          />
-          <Route
-            path="/settings"
-            element={
-              <AuthGuard>
-                <AppLayout>
-                  <Settings />
-                </AppLayout>
-              </AuthGuard>
-            }
-          />
+          <Route path="/" element={<AuthGuard><AppLayout><Cases /></AppLayout></AuthGuard>} />
+          <Route path="/new-case" element={<AuthGuard><AppLayout><NewCase /></AppLayout></AuthGuard>} />
+          <Route path="/case/:caseId/add-test" element={<AuthGuard><AppLayout><AddTest /></AppLayout></AuthGuard>} />
+          <Route path="/case/:caseId/test/:testId/edit" element={<AuthGuard><AppLayout><EditTest /></AppLayout></AuthGuard>} />
+          <Route path="/case/:caseId/edit" element={<AuthGuard><AppLayout><EditCase /></AppLayout></AuthGuard>} />
+          <Route path="/case/:caseId" element={<AuthGuard><AppLayout><CaseDashboard /></AppLayout></AuthGuard>} />
+          <Route path="/case/:caseId/dashboard" element={<AuthGuard><AppLayout><CaseDashboard /></AppLayout></AuthGuard>} />
+          <Route path="/settings" element={<AuthGuard><AppLayout><Settings /></AppLayout></AuthGuard>} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

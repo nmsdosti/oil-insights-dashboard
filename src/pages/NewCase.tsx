@@ -16,11 +16,18 @@ const NewCase = () => {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
 
-  // Form state
   const [customerName, setCustomerName] = useState("");
   const [customerAddress, setCustomerAddress] = useState("");
   const [customerMobile, setCustomerMobile] = useState("");
   const [customerEmail, setCustomerEmail] = useState("");
+  const [sampleId, setSampleId] = useState("");
+  const [lubricantGrade, setLubricantGrade] = useState("");
+  const [equipmentId, setEquipmentId] = useState("");
+  const [samplingPoint, setSamplingPoint] = useState("");
+  const [ulrNumber, setUlrNumber] = useState("");
+  const [sampleReceiptDate, setSampleReceiptDate] = useState("");
+  const [sampleTestingDate, setSampleTestingDate] = useState("");
+  const [reportDate, setReportDate] = useState("");
   const [machineCondition, setMachineCondition] = useState<Condition>("NORMAL");
   const [lubricantCondition, setLubricantCondition] = useState<Condition>("NORMAL");
 
@@ -45,6 +52,14 @@ const NewCase = () => {
         customer_address: customerAddress,
         customer_mobile: customerMobile,
         customer_email: customerEmail,
+        sample_id: sampleId || null,
+        lubricant_grade: lubricantGrade || null,
+        equipment_id: equipmentId || null,
+        sampling_point: samplingPoint || null,
+        ulr_number: ulrNumber || null,
+        sample_receipt_date: sampleReceiptDate || null,
+        sample_testing_date: sampleTestingDate || null,
+        report_date: reportDate || null,
         machine_condition: machineCondition,
         lubricant_condition: lubricantCondition,
       })
@@ -62,7 +77,6 @@ const NewCase = () => {
   };
 
   const canProceedStep1 = customerName.trim().length > 0;
-  const canProceedStep2 = true; // Conditions are always set
 
   return (
     <div className="container mx-auto max-w-2xl px-4 py-8">
@@ -85,53 +99,75 @@ const NewCase = () => {
       {step === 1 && (
         <Card>
           <CardHeader>
-            <CardTitle>Customer Details</CardTitle>
-            <CardDescription>Enter the customer information for this analysis</CardDescription>
+            <CardTitle>Customer & Sample Details</CardTitle>
+            <CardDescription>Enter the customer and sample information for this analysis</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="customer-name">
                 Customer Name <span className="text-destructive">*</span>
               </Label>
-              <Input
-                id="customer-name"
-                placeholder="Enter customer name"
-                value={customerName}
-                onChange={(e) => setCustomerName(e.target.value)}
-                required
-              />
+              <Input id="customer-name" placeholder="Enter customer name" value={customerName} onChange={(e) => setCustomerName(e.target.value)} required />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="customer-address">Address</Label>
-              <Input
-                id="customer-address"
-                placeholder="Enter address"
-                value={customerAddress}
-                onChange={(e) => setCustomerAddress(e.target.value)}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="customer-mobile">Mobile Number</Label>
-              <Input
-                id="customer-mobile"
-                type="tel"
-                placeholder="+1 (555) 000-0000"
-                value={customerMobile}
-                onChange={(e) => setCustomerMobile(e.target.value)}
-              />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="customer-address">Address</Label>
+                <Input id="customer-address" placeholder="Enter address" value={customerAddress} onChange={(e) => setCustomerAddress(e.target.value)} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="customer-mobile">Contact Number</Label>
+                <Input id="customer-mobile" type="tel" placeholder="+1 (555) 000-0000" value={customerMobile} onChange={(e) => setCustomerMobile(e.target.value)} />
+              </div>
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="customer-email">Email</Label>
-              <Input
-                id="customer-email"
-                type="email"
-                placeholder="customer@example.com"
-                value={customerEmail}
-                onChange={(e) => setCustomerEmail(e.target.value)}
-              />
+              <Input id="customer-email" type="email" placeholder="customer@example.com" value={customerEmail} onChange={(e) => setCustomerEmail(e.target.value)} />
+            </div>
+
+            <div className="border-t pt-4 mt-4">
+              <h3 className="text-sm font-semibold text-muted-foreground mb-3">SAMPLE INFORMATION</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="sample-id">Sample ID</Label>
+                  <Input id="sample-id" placeholder="Enter sample ID" value={sampleId} onChange={(e) => setSampleId(e.target.value)} />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="lubricant-grade">Lubricant Grade</Label>
+                  <Input id="lubricant-grade" placeholder="Enter lubricant grade" value={lubricantGrade} onChange={(e) => setLubricantGrade(e.target.value)} />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="equipment-id">Equipment ID</Label>
+                  <Input id="equipment-id" placeholder="Enter equipment ID" value={equipmentId} onChange={(e) => setEquipmentId(e.target.value)} />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="sampling-point">Sampling Point</Label>
+                  <Input id="sampling-point" placeholder="Enter sampling point" value={samplingPoint} onChange={(e) => setSamplingPoint(e.target.value)} />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="ulr-number">ULR Number</Label>
+                  <Input id="ulr-number" placeholder="Enter ULR number" value={ulrNumber} onChange={(e) => setUlrNumber(e.target.value)} />
+                </div>
+              </div>
+            </div>
+
+            <div className="border-t pt-4 mt-4">
+              <h3 className="text-sm font-semibold text-muted-foreground mb-3">DATES</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="sample-receipt-date">Sample Receipt Date</Label>
+                  <Input id="sample-receipt-date" type="date" value={sampleReceiptDate} onChange={(e) => setSampleReceiptDate(e.target.value)} />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="sample-testing-date">Sample Testing Date</Label>
+                  <Input id="sample-testing-date" type="date" value={sampleTestingDate} onChange={(e) => setSampleTestingDate(e.target.value)} />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="report-date">Report Date</Label>
+                  <Input id="report-date" type="date" value={reportDate} onChange={(e) => setReportDate(e.target.value)} />
+                </div>
+              </div>
             </div>
 
             <Button onClick={() => setStep(2)} disabled={!canProceedStep1} className="w-full mt-6">
@@ -155,28 +191,19 @@ const NewCase = () => {
                 <div className="flex items-center space-x-2 rounded-lg border border-border p-4 hover:bg-muted/50 transition-colors">
                   <RadioGroupItem value="NORMAL" id="machine-normal" />
                   <Label htmlFor="machine-normal" className="flex-1 cursor-pointer font-normal">
-                    <div>
-                      <div className="font-medium text-success">NORMAL</div>
-                      <div className="text-sm text-muted-foreground">Machine is operating within normal parameters</div>
-                    </div>
+                    <div><div className="font-medium text-success">NORMAL</div><div className="text-sm text-muted-foreground">Machine is operating within normal parameters</div></div>
                   </Label>
                 </div>
                 <div className="flex items-center space-x-2 rounded-lg border border-border p-4 hover:bg-muted/50 transition-colors">
                   <RadioGroupItem value="ALERT" id="machine-alert" />
                   <Label htmlFor="machine-alert" className="flex-1 cursor-pointer font-normal">
-                    <div>
-                      <div className="font-medium text-warning">ALERT</div>
-                      <div className="text-sm text-muted-foreground">Machine requires attention</div>
-                    </div>
+                    <div><div className="font-medium text-warning">ALERT</div><div className="text-sm text-muted-foreground">Machine requires attention</div></div>
                   </Label>
                 </div>
                 <div className="flex items-center space-x-2 rounded-lg border border-border p-4 hover:bg-muted/50 transition-colors">
                   <RadioGroupItem value="ALARM" id="machine-alarm" />
                   <Label htmlFor="machine-alarm" className="flex-1 cursor-pointer font-normal">
-                    <div>
-                      <div className="font-medium text-destructive">ALARM</div>
-                      <div className="text-sm text-muted-foreground">Critical machine condition</div>
-                    </div>
+                    <div><div className="font-medium text-destructive">ALARM</div><div className="text-sm text-muted-foreground">Critical machine condition</div></div>
                   </Label>
                 </div>
               </RadioGroup>
@@ -188,34 +215,25 @@ const NewCase = () => {
                 <div className="flex items-center space-x-2 rounded-lg border border-border p-4 hover:bg-muted/50 transition-colors">
                   <RadioGroupItem value="NORMAL" id="lubricant-normal" />
                   <Label htmlFor="lubricant-normal" className="flex-1 cursor-pointer font-normal">
-                    <div>
-                      <div className="font-medium text-success">NORMAL</div>
-                      <div className="text-sm text-muted-foreground">Lubricant is in good condition</div>
-                    </div>
+                    <div><div className="font-medium text-success">NORMAL</div><div className="text-sm text-muted-foreground">Lubricant is in good condition</div></div>
                   </Label>
                 </div>
                 <div className="flex items-center space-x-2 rounded-lg border border-border p-4 hover:bg-muted/50 transition-colors">
                   <RadioGroupItem value="ALERT" id="lubricant-alert" />
                   <Label htmlFor="lubricant-alert" className="flex-1 cursor-pointer font-normal">
-                    <div>
-                      <div className="font-medium text-warning">ALERT</div>
-                      <div className="text-sm text-muted-foreground">Lubricant degradation detected</div>
-                    </div>
+                    <div><div className="font-medium text-warning">ALERT</div><div className="text-sm text-muted-foreground">Lubricant degradation detected</div></div>
                   </Label>
                 </div>
                 <div className="flex items-center space-x-2 rounded-lg border border-border p-4 hover:bg-muted/50 transition-colors">
                   <RadioGroupItem value="ALARM" id="lubricant-alarm" />
                   <Label htmlFor="lubricant-alarm" className="flex-1 cursor-pointer font-normal">
-                    <div>
-                      <div className="font-medium text-destructive">ALARM</div>
-                      <div className="text-sm text-muted-foreground">Critical lubricant condition</div>
-                    </div>
+                    <div><div className="font-medium text-destructive">ALARM</div><div className="text-sm text-muted-foreground">Critical lubricant condition</div></div>
                   </Label>
                 </div>
               </RadioGroup>
             </div>
 
-            <Button onClick={handleSubmit} disabled={!canProceedStep2 || loading} className="w-full mt-6">
+            <Button onClick={handleSubmit} disabled={loading} className="w-full mt-6">
               <Save className="mr-2 h-4 w-4" />
               {loading ? "Creating Case..." : "Create Case & Add Tests"}
             </Button>

@@ -24,6 +24,7 @@ export type Database = {
           parameter_name: string
           particle_size: string | null
           status: string | null
+          test_method: string | null
           unit: string | null
           upper_limit: number | null
         }
@@ -36,6 +37,7 @@ export type Database = {
           parameter_name: string
           particle_size?: string | null
           status?: string | null
+          test_method?: string | null
           unit?: string | null
           upper_limit?: number | null
         }
@@ -48,6 +50,7 @@ export type Database = {
           parameter_name?: string
           particle_size?: string | null
           status?: string | null
+          test_method?: string | null
           unit?: string | null
           upper_limit?: number | null
         }
@@ -104,10 +107,18 @@ export type Database = {
           customer_email: string | null
           customer_mobile: string | null
           customer_name: string
+          equipment_id: string | null
           id: string
           lubricant_condition: string
+          lubricant_grade: string | null
           machine_condition: string
           recommendations: string | null
+          report_date: string | null
+          sample_id: string | null
+          sample_receipt_date: string | null
+          sample_testing_date: string | null
+          sampling_point: string | null
+          ulr_number: string | null
           updated_at: string | null
           user_id: string
         }
@@ -118,10 +129,18 @@ export type Database = {
           customer_email?: string | null
           customer_mobile?: string | null
           customer_name: string
+          equipment_id?: string | null
           id?: string
           lubricant_condition: string
+          lubricant_grade?: string | null
           machine_condition: string
           recommendations?: string | null
+          report_date?: string | null
+          sample_id?: string | null
+          sample_receipt_date?: string | null
+          sample_testing_date?: string | null
+          sampling_point?: string | null
+          ulr_number?: string | null
           updated_at?: string | null
           user_id: string
         }
@@ -132,10 +151,18 @@ export type Database = {
           customer_email?: string | null
           customer_mobile?: string | null
           customer_name?: string
+          equipment_id?: string | null
           id?: string
           lubricant_condition?: string
+          lubricant_grade?: string | null
           machine_condition?: string
           recommendations?: string | null
+          report_date?: string | null
+          sample_id?: string | null
+          sample_receipt_date?: string | null
+          sample_testing_date?: string | null
+          sampling_point?: string | null
+          ulr_number?: string | null
           updated_at?: string | null
           user_id?: string
         }
@@ -173,6 +200,27 @@ export type Database = {
           id?: string
           logo_url?: string | null
           updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      test_methods: {
+        Row: {
+          created_at: string | null
+          id: string
+          method_name: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          method_name: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          method_name?: string
           user_id?: string
         }
         Relationships: []

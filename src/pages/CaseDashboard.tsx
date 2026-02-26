@@ -31,6 +31,14 @@ interface CaseData {
   recommendations: string;
   created_at: string;
   access_token: string;
+  sample_id: string;
+  lubricant_grade: string;
+  equipment_id: string;
+  sampling_point: string;
+  ulr_number: string;
+  sample_receipt_date: string;
+  sample_testing_date: string;
+  report_date: string;
 }
 
 interface TestData {
@@ -51,6 +59,7 @@ interface TestResult {
   unit: string;
   particle_size: string;
   status: string;
+  test_method: string;
 }
 
 interface CompanySettings {
@@ -152,7 +161,8 @@ const CaseDashboard = () => {
           actual_value,
           unit,
           particle_size,
-          status
+          status,
+          test_method
         )
       `)
       .eq("case_id", caseId);
@@ -857,15 +867,17 @@ const CaseDashboard = () => {
             Back to Cases
           </Button>
           <div className="flex gap-2">
+            <Button asChild variant="outline" size="sm">
+              <Link to={`/case/${caseId}/edit`}>
+                <Edit className="mr-2 h-4 w-4" />
+                Edit Case
+              </Link>
+            </Button>
             <Button asChild variant="outline">
               <Link to={`/case/${caseId}/add-test`}>
                 <Plus className="mr-2 h-4 w-4" />
                 Add Test
               </Link>
-            </Button>
-            <Button variant="outline" onClick={copyCustomerLink} className="border-sky-200 text-sky-700 hover:bg-sky-50">
-              <Link2 className="mr-2 h-4 w-4" />
-              Copy Customer Link
             </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -913,20 +925,17 @@ const CaseDashboard = () => {
           </div>
           
           <div className="bg-slate-100 px-6 py-3 grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-            <div>
-              <span className="font-semibold">CLIENT:</span> {caseData.customer_name}
-            </div>
-            {caseData.customer_email && (
-              <div>
-                <span className="font-semibold">EMAIL:</span> {caseData.customer_email}
-              </div>
-            )}
-            <div>
-              <span className="font-semibold">REPORT DATE:</span> {format(new Date(), "MMM d, yyyy")}
-            </div>
-            <div>
-              <span className="font-semibold">SAMPLE DATE:</span> {format(new Date(caseData.created_at), "MMM d, yyyy")}
-            </div>
+            <div><span className="font-semibold">CLIENT:</span> {caseData.customer_name}</div>
+            {caseData.customer_address && <div><span className="font-semibold">ADDRESS:</span> {caseData.customer_address}</div>}
+            {caseData.customer_mobile && <div><span className="font-semibold">CONTACT:</span> {caseData.customer_mobile}</div>}
+            {(caseData as any).sample_id && <div><span className="font-semibold">SAMPLE ID:</span> {(caseData as any).sample_id}</div>}
+            {(caseData as any).lubricant_grade && <div><span className="font-semibold">LUBRICANT GRADE:</span> {(caseData as any).lubricant_grade}</div>}
+            {(caseData as any).equipment_id && <div><span className="font-semibold">EQUIPMENT ID:</span> {(caseData as any).equipment_id}</div>}
+            {(caseData as any).sampling_point && <div><span className="font-semibold">SAMPLING POINT:</span> {(caseData as any).sampling_point}</div>}
+            {(caseData as any).ulr_number && <div><span className="font-semibold">ULR NUMBER:</span> {(caseData as any).ulr_number}</div>}
+            {(caseData as any).sample_receipt_date && <div><span className="font-semibold">SAMPLE RECEIPT:</span> {format(new Date((caseData as any).sample_receipt_date), "MMM d, yyyy")}</div>}
+            {(caseData as any).sample_testing_date && <div><span className="font-semibold">TESTING DATE:</span> {format(new Date((caseData as any).sample_testing_date), "MMM d, yyyy")}</div>}
+            <div><span className="font-semibold">REPORT DATE:</span> {(caseData as any).report_date ? format(new Date((caseData as any).report_date), "MMM d, yyyy") : format(new Date(), "MMM d, yyyy")}</div>
           </div>
         </div>
 
@@ -1076,6 +1085,7 @@ const CaseDashboard = () => {
                 <thead>
                   <tr className="bg-sky-600 text-white">
                     <th className="text-center p-3 font-semibold rounded-tl-lg">TEST PARAMETER</th>
+                    <th className="text-center p-3 font-semibold">TEST METHOD</th>
                     <th className="text-center p-3 font-semibold">LOWER LIMIT</th>
                     <th className="text-center p-3 font-semibold">UPPER LIMIT</th>
                     <th className="text-center p-3 font-semibold">ACTUAL VALUE</th>
@@ -1090,6 +1100,7 @@ const CaseDashboard = () => {
                   {test.results.map((result, idx) => (
                     <tr key={result.id} className={idx % 2 === 0 ? "bg-slate-50" : "bg-white"}>
                       <td className="p-3 text-center font-medium text-slate-700">{result.parameter_name}</td>
+                      <td className="p-3 text-center text-slate-600">{(result as any).test_method || "-"}</td>
                       <td className="p-3 text-center text-slate-600">{result.lower_limit || "-"}</td>
                       <td className="p-3 text-center text-slate-600">{result.upper_limit || "-"}</td>
                       <td className="p-3 text-center font-bold text-slate-800">{result.actual_value}</td>
@@ -1170,6 +1181,19 @@ const CaseDashboard = () => {
                 )}
               </div>
             )}
+          </div>
+        </div>
+
+        <div className="pdf-section bg-white rounded-lg shadow-sm p-6">
+          <h3 className="text-lg font-bold text-slate-800 mb-3 flex items-center gap-2">
+            <div className="w-1 h-6 bg-sky-500 rounded"></div>
+            DISCLAIMER
+          </h3>
+          <div className="text-xs text-slate-600 space-y-1 border-l-4 border-slate-300 pl-4">
+            <p>1. Samples tested as received. The test results relate only to the items tested.</p>
+            <p>2. Comments mentioned in the report can be used for consulting purpose only & shall not be used in case of any legal matters.</p>
+            <p>3. Tested samples will be retained for one month from the date of testing unless specified by the customer.</p>
+            <p>4. The test report shall not be reproduced except in full without the written permission.</p>
           </div>
         </div>
 
