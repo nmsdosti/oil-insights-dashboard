@@ -6,8 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
-import { ArrowLeft, Plus, Trash2, Save } from "lucide-react";
-import { Loader2 } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Save, Loader2 } from "lucide-react";
+import TestMethodSelect from "@/components/TestMethodSelect";
 
 interface Parameter {
   id: string;
@@ -17,6 +17,7 @@ interface Parameter {
   actualValue: string;
   unit: string;
   particleSize: string;
+  testMethod: string;
 }
 
 const EditTest = () => {
@@ -32,110 +33,53 @@ const EditTest = () => {
   const [uploadingImage, setUploadingImage] = useState(false);
   const [parameters, setParameters] = useState<Parameter[]>([]);
 
-  useEffect(() => {
-    fetchTestData();
-  }, [testId]);
+  useEffect(() => { fetchTestData(); }, [testId]);
 
   const fetchTestData = async () => {
-    // Fetch test info
-    const { data: testData, error: testError } = await supabase
-      .from("case_tests")
-      .select("*")
-      .eq("id", testId)
-      .single();
-
-    if (testError) {
-      toast.error("Failed to load test data");
-      console.error(testError);
-      return;
-    }
-
+    const { data: testData, error: testError } = await supabase.from("case_tests").select("*").eq("id", testId).single();
+    if (testError) { toast.error("Failed to load test data"); return; }
     setTestName(testData.test_name);
     setImageUrl(testData.image_url || "");
     setImageComment(testData.image_comment || "");
 
-    // Fetch test results
-    const { data: results, error: resultsError } = await supabase
-      .from("case_test_results")
-      .select("*")
-      .eq("case_test_id", testId);
-
-    if (resultsError) {
-      toast.error("Failed to load test results");
-      console.error(resultsError);
-    } else {
-      setParameters(
-        results.map((r, idx) => ({
-          id: r.id,
-          name: r.parameter_name,
-          lowerLimit: r.lower_limit?.toString() || "",
-          upperLimit: r.upper_limit?.toString() || "",
-          actualValue: r.actual_value?.toString() || "",
-          unit: r.unit || "",
-          particleSize: r.particle_size || "",
-        }))
-      );
+    const { data: results, error: resultsError } = await supabase.from("case_test_results").select("*").eq("case_test_id", testId);
+    if (!resultsError) {
+      setParameters(results.map((r) => ({
+        id: r.id, name: r.parameter_name, lowerLimit: r.lower_limit?.toString() || "", upperLimit: r.upper_limit?.toString() || "",
+        actualValue: r.actual_value?.toString() || "", unit: r.unit || "", particleSize: r.particle_size || "",
+        testMethod: (r as any).test_method || "",
+      })));
     }
-
     setLoading(false);
   };
 
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      setImageFile(file);
-      setImagePreview(URL.createObjectURL(file));
-      setImageUrl(""); // Clear URL when file is selected
-    }
+    if (file) { setImageFile(file); setImagePreview(URL.createObjectURL(file)); setImageUrl(""); }
   };
 
   const uploadImage = async (): Promise<string | null> => {
     if (!imageFile) return imageUrl || null;
-    
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      toast.error("You must be logged in to upload images");
-      return null;
-    }
-
+    if (!user) { toast.error("You must be logged in"); return null; }
     setUploadingImage(true);
     const fileExt = imageFile.name.split('.').pop();
     const fileName = `${user.id}/${Date.now()}.${fileExt}`;
-
-    const { error: uploadError } = await supabase.storage
-      .from('test-images')
-      .upload(fileName, imageFile);
-
-    if (uploadError) {
-      console.error('Upload error:', uploadError);
-      toast.error("Failed to upload image");
-      setUploadingImage(false);
-      return null;
-    }
-
-    const { data: { publicUrl } } = supabase.storage
-      .from('test-images')
-      .getPublicUrl(fileName);
-
+    const { error } = await supabase.storage.from('test-images').upload(fileName, imageFile);
+    if (error) { toast.error("Failed to upload image"); setUploadingImage(false); return null; }
+    const { data: { publicUrl } } = supabase.storage.from('test-images').getPublicUrl(fileName);
     setUploadingImage(false);
     return publicUrl;
   };
 
   const addParameter = () => {
-    setParameters([
-      ...parameters,
-      { id: Date.now().toString(), name: "", lowerLimit: "", upperLimit: "", actualValue: "", unit: "", particleSize: "" },
-    ]);
+    setParameters([...parameters, { id: Date.now().toString(), name: "", lowerLimit: "", upperLimit: "", actualValue: "", unit: "", particleSize: "", testMethod: "" }]);
   };
 
   const removeParameter = async (id: string) => {
-    // If it's an existing parameter (UUID), delete from DB
     if (id.length > 20) {
       const { error } = await supabase.from("case_test_results").delete().eq("id", id);
-      if (error) {
-        toast.error("Failed to delete parameter");
-        return;
-      }
+      if (error) { toast.error("Failed to delete parameter"); return; }
     }
     setParameters(parameters.filter((p) => p.id !== id));
   };
@@ -153,148 +97,54 @@ const EditTest = () => {
   };
 
   const handleSave = async () => {
-    if (!testName.trim()) {
-      toast.error("Please enter a test name");
-      return;
-    }
-
-    if (parameters.some((p) => !p.name.trim() || !p.actualValue.trim())) {
-      toast.error("Please fill in all parameter names and actual values");
-      return;
-    }
-
+    if (!testName.trim()) { toast.error("Please enter a test name"); return; }
+    if (parameters.some((p) => !p.name.trim() || !p.actualValue.trim())) { toast.error("Please fill in all parameter names and actual values"); return; }
     setSaving(true);
-
-    // Upload image if file selected
     const finalImageUrl = await uploadImage();
 
-    // Update test info
-    const { error: testError } = await supabase
-      .from("case_tests")
-      .update({
-        test_name: testName,
-        image_url: finalImageUrl,
-        image_comment: imageComment || null,
-      })
-      .eq("id", testId);
+    const { error: testError } = await supabase.from("case_tests").update({ test_name: testName, image_url: finalImageUrl, image_comment: imageComment || null }).eq("id", testId);
+    if (testError) { toast.error("Failed to update test"); setSaving(false); return; }
 
-    if (testError) {
-      toast.error("Failed to update test");
-      console.error(testError);
-      setSaving(false);
-      return;
-    }
-
-    // Delete all existing results and insert new ones
     await supabase.from("case_test_results").delete().eq("case_test_id", testId);
-
     const results = parameters.map((p) => {
       const actual = parseFloat(p.actualValue);
       const lower = p.lowerLimit ? parseFloat(p.lowerLimit) : undefined;
       const upper = p.upperLimit ? parseFloat(p.upperLimit) : undefined;
-
       return {
-        case_test_id: testId,
-        parameter_name: p.name,
-        lower_limit: lower,
-        upper_limit: upper,
-        actual_value: actual,
-        unit: p.unit || null,
-        particle_size: p.particleSize || null,
-        status: calculateStatus(actual, lower, upper),
+        case_test_id: testId, parameter_name: p.name, lower_limit: lower, upper_limit: upper,
+        actual_value: actual, unit: p.unit || null, particle_size: p.particleSize || null,
+        test_method: p.testMethod || null, status: calculateStatus(actual, lower, upper),
       };
     });
 
     const { error: resultsError } = await supabase.from("case_test_results").insert(results);
-
-    if (resultsError) {
-      toast.error("Failed to update test results");
-      console.error(resultsError);
-    } else {
-      toast.success("Test updated successfully!");
-      navigate(`/case/${caseId}/dashboard`);
-    }
-
+    if (resultsError) toast.error("Failed to update test results");
+    else { toast.success("Test updated successfully!"); navigate(`/case/${caseId}/dashboard`); }
     setSaving(false);
   };
 
-  if (loading) {
-    return (
-      <div className="flex min-h-[60vh] items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
+  if (loading) return <div className="flex min-h-[60vh] items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
 
   return (
     <div className="container mx-auto max-w-4xl px-4 py-8">
       <Button variant="ghost" onClick={() => navigate(`/case/${caseId}/dashboard`)} className="mb-6">
-        <ArrowLeft className="mr-2 h-4 w-4" />
-        Back to Dashboard
+        <ArrowLeft className="mr-2 h-4 w-4" /> Back to Dashboard
       </Button>
-
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold">Edit Test</h1>
-        <p className="text-muted-foreground mt-1">Modify test parameters and values</p>
-      </div>
+      <div className="mb-8"><h1 className="text-3xl font-bold">Edit Test</h1><p className="text-muted-foreground mt-1">Modify test parameters and values</p></div>
 
       <div className="space-y-6">
         <Card>
-          <CardHeader>
-            <CardTitle>Test Information</CardTitle>
-            <CardDescription>Update the test name and image</CardDescription>
-          </CardHeader>
+          <CardHeader><CardTitle>Test Information</CardTitle><CardDescription>Update the test name and image</CardDescription></CardHeader>
           <CardContent className="space-y-4">
+            <div className="space-y-2"><Label>Test Name <span className="text-destructive">*</span></Label><Input value={testName} onChange={(e) => setTestName(e.target.value)} /></div>
             <div className="space-y-2">
-              <Label htmlFor="test-name">
-                Test Name <span className="text-destructive">*</span>
-              </Label>
-              <Input
-                id="test-name"
-                placeholder="e.g., Viscosity Analysis, Wear Metals Test"
-                value={testName}
-                onChange={(e) => setTestName(e.target.value)}
-              />
+              <Label>Test Image (Optional)</Label>
+              <Input type="file" accept="image/*" onChange={handleImageSelect} className="cursor-pointer" />
+              {(imagePreview || imageUrl) && <img src={imagePreview || imageUrl} alt="Preview" className="max-w-xs rounded-lg border mt-2" />}
+              {uploadingImage && <p className="text-xs text-muted-foreground flex items-center gap-2"><Loader2 className="h-3 w-3 animate-spin" />Uploading...</p>}
             </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="image-file">Test Image (Optional)</Label>
-              <div className="flex gap-2">
-                <Input
-                  id="image-file"
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageSelect}
-                  className="cursor-pointer"
-                />
-              </div>
-              {(imagePreview || imageUrl) && (
-                <div className="mt-2">
-                  <img 
-                    src={imagePreview || imageUrl} 
-                    alt="Preview" 
-                    className="max-w-xs rounded-lg border"
-                  />
-                </div>
-              )}
-              {uploadingImage && (
-                <p className="text-xs text-muted-foreground flex items-center gap-2">
-                  <Loader2 className="h-3 w-3 animate-spin" />
-                  Uploading image...
-                </p>
-              )}
-            </div>
-
             {(imagePreview || imageUrl) && (
-              <div className="space-y-2">
-                <Label htmlFor="image-comment">Image Comment (Optional)</Label>
-                <Input
-                  id="image-comment"
-                  placeholder="Add a comment about this particle image..."
-                  value={imageComment}
-                  onChange={(e) => setImageComment(e.target.value)}
-                />
-              </div>
+              <div className="space-y-2"><Label>Image Comment (Optional)</Label><Input value={imageComment} onChange={(e) => setImageComment(e.target.value)} /></div>
             )}
           </CardContent>
         </Card>
@@ -302,14 +152,8 @@ const EditTest = () => {
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
-              <div>
-                <CardTitle>Test Parameters</CardTitle>
-                <CardDescription>Modify parameters, limits, and actual values</CardDescription>
-              </div>
-              <Button onClick={addParameter} size="sm" variant="outline">
-                <Plus className="mr-2 h-4 w-4" />
-                Add Parameter
-              </Button>
+              <div><CardTitle>Test Parameters</CardTitle><CardDescription>Modify parameters, limits, and actual values</CardDescription></div>
+              <Button onClick={addParameter} size="sm" variant="outline"><Plus className="mr-2 h-4 w-4" />Add Parameter</Button>
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -317,85 +161,28 @@ const EditTest = () => {
               <div key={param.id} className="rounded-lg border border-border p-4 space-y-3">
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-medium text-muted-foreground">Parameter {index + 1}</span>
-                  {parameters.length > 1 && (
-                    <Button variant="ghost" size="icon" onClick={() => removeParameter(param.id)}>
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
-                  )}
+                  {parameters.length > 1 && <Button variant="ghost" size="icon" onClick={() => removeParameter(param.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>}
                 </div>
-
                 <div className="grid gap-3 md:grid-cols-6">
-                  <div className="md:col-span-2 space-y-2">
-                    <Label>Parameter Name *</Label>
-                    <Input
-                      placeholder="e.g., Viscosity, Iron"
-                      value={param.name}
-                      onChange={(e) => updateParameter(param.id, "name", e.target.value)}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>Lower Limit</Label>
-                    <Input
-                      type="number"
-                      step="any"
-                      placeholder="Min"
-                      value={param.lowerLimit}
-                      onChange={(e) => updateParameter(param.id, "lowerLimit", e.target.value)}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>Upper Limit</Label>
-                    <Input
-                      type="number"
-                      step="any"
-                      placeholder="Max"
-                      value={param.upperLimit}
-                      onChange={(e) => updateParameter(param.id, "upperLimit", e.target.value)}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>Unit</Label>
-                    <Input
-                      placeholder="ppm, cSt"
-                      value={param.unit}
-                      onChange={(e) => updateParameter(param.id, "unit", e.target.value)}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>Particle Size</Label>
-                    <Input
-                      placeholder="e.g., 4μm"
-                      value={param.particleSize}
-                      onChange={(e) => updateParameter(param.id, "particleSize", e.target.value)}
-                    />
-                  </div>
+                  <div className="md:col-span-2 space-y-2"><Label>Parameter Name *</Label><Input value={param.name} onChange={(e) => updateParameter(param.id, "name", e.target.value)} /></div>
+                  <div className="space-y-2"><Label>Lower Limit</Label><Input type="number" step="any" value={param.lowerLimit} onChange={(e) => updateParameter(param.id, "lowerLimit", e.target.value)} /></div>
+                  <div className="space-y-2"><Label>Upper Limit</Label><Input type="number" step="any" value={param.upperLimit} onChange={(e) => updateParameter(param.id, "upperLimit", e.target.value)} /></div>
+                  <div className="space-y-2"><Label>Unit</Label><Input value={param.unit} onChange={(e) => updateParameter(param.id, "unit", e.target.value)} /></div>
+                  <div className="space-y-2"><Label>Particle Size</Label><Input value={param.particleSize} onChange={(e) => updateParameter(param.id, "particleSize", e.target.value)} /></div>
                 </div>
-
-                <div className="space-y-2">
-                  <Label>Actual Value *</Label>
-                  <Input
-                    type="number"
-                    step="any"
-                    placeholder="Enter measured value"
-                    value={param.actualValue}
-                    onChange={(e) => updateParameter(param.id, "actualValue", e.target.value)}
-                  />
+                <div className="grid gap-3 md:grid-cols-2">
+                  <div className="space-y-2"><Label>Actual Value *</Label><Input type="number" step="any" value={param.actualValue} onChange={(e) => updateParameter(param.id, "actualValue", e.target.value)} /></div>
+                  <div className="space-y-2"><Label>Test Method</Label><TestMethodSelect value={param.testMethod} onChange={(v) => updateParameter(param.id, "testMethod", v)} /></div>
                 </div>
               </div>
             ))}
           </CardContent>
         </Card>
 
-        <div className="flex gap-3">
-          <Button onClick={handleSave} disabled={saving} className="flex-1">
-            {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-            {saving ? "Saving..." : "Save Changes"}
-          </Button>
-        </div>
+        <Button onClick={handleSave} disabled={saving} className="w-full">
+          {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+          {saving ? "Saving..." : "Save Changes"}
+        </Button>
       </div>
     </div>
   );

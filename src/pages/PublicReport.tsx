@@ -29,6 +29,14 @@ interface CaseData {
   recommendations: string;
   created_at: string;
   access_token: string;
+  sample_id: string;
+  lubricant_grade: string;
+  equipment_id: string;
+  sampling_point: string;
+  ulr_number: string;
+  sample_receipt_date: string;
+  sample_testing_date: string;
+  report_date: string;
 }
 
 interface TestData {
@@ -49,6 +57,7 @@ interface TestResult {
   unit: string;
   particle_size: string;
   status: string;
+  test_method: string;
 }
 
 interface CompanySettings {
@@ -119,7 +128,8 @@ const PublicReport = () => {
           actual_value,
           unit,
           particle_size,
-          status
+          status,
+          test_method
         )
       `)
       .eq("case_id", caseInfo.id);
@@ -696,19 +706,18 @@ const PublicReport = () => {
         {/* Client Info */}
         <Card className="pdf-section">
           <CardContent className="pt-6">
-            <div className="grid md:grid-cols-2 gap-6">
-              <div>
-                <p className="text-sm text-muted-foreground">Client Name</p>
-                <p className="font-semibold text-lg">{caseData.customer_name}</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Report Date</p>
-                <p className="font-semibold">{format(new Date(), "MMM d, yyyy")}</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Sample Date</p>
-                <p className="font-semibold">{format(new Date(caseData.created_at), "MMM d, yyyy")}</p>
-              </div>
+            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div><p className="text-sm text-muted-foreground">Client Name</p><p className="font-semibold">{caseData.customer_name}</p></div>
+              {caseData.customer_address && <div><p className="text-sm text-muted-foreground">Address</p><p className="font-semibold">{caseData.customer_address}</p></div>}
+              {caseData.customer_mobile && <div><p className="text-sm text-muted-foreground">Contact</p><p className="font-semibold">{caseData.customer_mobile}</p></div>}
+              {(caseData as any).sample_id && <div><p className="text-sm text-muted-foreground">Sample ID</p><p className="font-semibold">{(caseData as any).sample_id}</p></div>}
+              {(caseData as any).lubricant_grade && <div><p className="text-sm text-muted-foreground">Lubricant Grade</p><p className="font-semibold">{(caseData as any).lubricant_grade}</p></div>}
+              {(caseData as any).equipment_id && <div><p className="text-sm text-muted-foreground">Equipment ID</p><p className="font-semibold">{(caseData as any).equipment_id}</p></div>}
+              {(caseData as any).sampling_point && <div><p className="text-sm text-muted-foreground">Sampling Point</p><p className="font-semibold">{(caseData as any).sampling_point}</p></div>}
+              {(caseData as any).ulr_number && <div><p className="text-sm text-muted-foreground">ULR Number</p><p className="font-semibold">{(caseData as any).ulr_number}</p></div>}
+              {(caseData as any).sample_receipt_date && <div><p className="text-sm text-muted-foreground">Sample Receipt Date</p><p className="font-semibold">{format(new Date((caseData as any).sample_receipt_date), "MMM d, yyyy")}</p></div>}
+              {(caseData as any).sample_testing_date && <div><p className="text-sm text-muted-foreground">Testing Date</p><p className="font-semibold">{format(new Date((caseData as any).sample_testing_date), "MMM d, yyyy")}</p></div>}
+              <div><p className="text-sm text-muted-foreground">Report Date</p><p className="font-semibold">{(caseData as any).report_date ? format(new Date((caseData as any).report_date), "MMM d, yyyy") : format(new Date(), "MMM d, yyyy")}</p></div>
             </div>
           </CardContent>
         </Card>
@@ -823,6 +832,7 @@ const PublicReport = () => {
                   <thead>
                     <tr className="bg-sky-600 text-white">
                       <th className="p-3 text-left">Parameter</th>
+                      <th className="p-3 text-center">Test Method</th>
                       <th className="p-3 text-center">Lower Limit</th>
                       <th className="p-3 text-center">Upper Limit</th>
                       <th className="p-3 text-center">Actual Value</th>
@@ -837,6 +847,7 @@ const PublicReport = () => {
                     {test.results.map((result, idx) => (
                       <tr key={result.id} className={idx % 2 === 0 ? "bg-slate-50" : ""}>
                         <td className="p-3 font-medium">{result.parameter_name}</td>
+                        <td className="p-3 text-center">{(result as any).test_method || "-"}</td>
                         <td className="p-3 text-center">{result.lower_limit ?? "-"}</td>
                         <td className="p-3 text-center">{result.upper_limit ?? "-"}</td>
                         <td className="p-3 text-center font-semibold">{result.actual_value}</td>
@@ -875,6 +886,21 @@ const PublicReport = () => {
             </CardContent>
           </Card>
         )}
+
+        {/* Disclaimer */}
+        <Card className="pdf-section">
+          <CardHeader>
+            <CardTitle>Disclaimer</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-xs text-muted-foreground space-y-1">
+              <p>1. Samples tested as received. The test results relate only to the items tested.</p>
+              <p>2. Comments mentioned in the report can be used for consulting purpose only & shall not be used in case of any legal matters.</p>
+              <p>3. Tested samples will be retained for one month from the date of testing unless specified by the customer.</p>
+              <p>4. The test report shall not be reproduced except in full without the written permission.</p>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Footer */}
         <div className="pdf-section text-center text-sm text-muted-foreground py-4">
