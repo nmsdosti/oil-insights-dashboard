@@ -874,6 +874,12 @@ const CaseDashboard = () => {
               </Link>
             </Button>
             <Button asChild variant="outline">
+              <Link to={`/case/${caseId}/manage-tests`}>
+                <FlaskConical className="mr-2 h-4 w-4" />
+                Manage Tests
+              </Link>
+            </Button>
+            <Button asChild variant="outline">
               <Link to={`/case/${caseId}/add-test`}>
                 <Plus className="mr-2 h-4 w-4" />
                 Add Test
