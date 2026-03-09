@@ -67,8 +67,8 @@ const NewCase = () => {
       .single();
 
     if (error) {
-      toast.error("Failed to create case");
-      console.error(error);
+      toast.error(`Failed to create case: ${error.message}`);
+      console.error("Case creation error:", error);
     } else {
       toast.success("Case created successfully!");
       navigate(`/case/${data.id}/add-test`);
