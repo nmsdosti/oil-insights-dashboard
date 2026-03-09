@@ -12,6 +12,7 @@ import NewCase from "./pages/NewCase";
 import AddTest from "./pages/AddTest";
 import EditTest from "./pages/EditTest";
 import EditCase from "./pages/EditCase";
+import ManageTests from "./pages/ManageTests";
 import CaseDashboard from "./pages/CaseDashboard";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
@@ -34,6 +35,7 @@ const App = () => (
           <Route path="/case/:caseId/add-test" element={<AuthGuard><AppLayout><AddTest /></AppLayout></AuthGuard>} />
           <Route path="/case/:caseId/test/:testId/edit" element={<AuthGuard><AppLayout><EditTest /></AppLayout></AuthGuard>} />
           <Route path="/case/:caseId/edit" element={<AuthGuard><AppLayout><EditCase /></AppLayout></AuthGuard>} />
+          <Route path="/case/:caseId/manage-tests" element={<AuthGuard><AppLayout><ManageTests /></AppLayout></AuthGuard>} />
           <Route path="/case/:caseId" element={<AuthGuard><AppLayout><CaseDashboard /></AppLayout></AuthGuard>} />
           <Route path="/case/:caseId/dashboard" element={<AuthGuard><AppLayout><CaseDashboard /></AppLayout></AuthGuard>} />
           <Route path="/settings" element={<AuthGuard><AppLayout><Settings /></AppLayout></AuthGuard>} />

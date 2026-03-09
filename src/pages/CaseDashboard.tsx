@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { ArrowLeft, Plus, Download, Loader2, Edit, Save, CheckCircle, AlertTriangle, XCircle, FileSpreadsheet, FileText, ChevronDown, QrCode, Copy, Link2 } from "lucide-react";
+import { ArrowLeft, Plus, Download, Loader2, Edit, Save, CheckCircle, AlertTriangle, XCircle, FileSpreadsheet, FileText, ChevronDown, QrCode, Copy, Link2, FlaskConical } from "lucide-react";
 import { format } from "date-fns";
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
@@ -871,6 +871,12 @@ const CaseDashboard = () => {
               <Link to={`/case/${caseId}/edit`}>
                 <Edit className="mr-2 h-4 w-4" />
                 Edit Case
+              </Link>
+            </Button>
+            <Button asChild variant="outline">
+              <Link to={`/case/${caseId}/manage-tests`}>
+                <FlaskConical className="mr-2 h-4 w-4" />
+                Manage Tests
               </Link>
             </Button>
             <Button asChild variant="outline">
