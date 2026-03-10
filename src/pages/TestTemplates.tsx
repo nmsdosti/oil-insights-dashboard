@@ -88,7 +88,7 @@ const TestTemplates = () => {
   const addParamToTemplate = (templateId: string) => {
     setTemplates(ts => ts.map(t => t.id === templateId ? {
       ...t, isDirty: true,
-      parameters: [...t.parameters, { id: `new-${Date.now()}`, name: "", lowerLimit: "", upperLimit: "", unit: "" }],
+      parameters: [...t.parameters, { id: `new-${Date.now()}`, name: "", lowerLimit: "", upperLimit: "", unit: "", testMethod: "" }],
     } : t));
   };
 
