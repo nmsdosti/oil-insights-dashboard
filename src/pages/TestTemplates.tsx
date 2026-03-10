@@ -312,7 +312,7 @@ const TestTemplates = () => {
                 </div>
               </AccordionContent>
             </AccordionItem>
-          )))}
+          ))}
         </Accordion>
       )}
     </div>
