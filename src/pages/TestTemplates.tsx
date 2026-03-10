@@ -35,7 +35,7 @@ const TestTemplates = () => {
   const [showNew, setShowNew] = useState(false);
   const [newName, setNewName] = useState("");
   const [newParams, setNewParams] = useState<TemplateParam[]>([
-    { id: "1", name: "", lowerLimit: "", upperLimit: "", unit: "" },
+    { id: "1", name: "", lowerLimit: "", upperLimit: "", unit: "", testMethod: "" },
   ]);
   const [adding, setAdding] = useState(false);
 
