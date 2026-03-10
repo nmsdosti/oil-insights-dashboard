@@ -232,6 +232,7 @@ export type Database = {
           lower_limit: number | null
           parameter_name: string
           template_id: string
+          test_method: string | null
           unit: string | null
           upper_limit: number | null
         }
@@ -241,6 +242,7 @@ export type Database = {
           lower_limit?: number | null
           parameter_name: string
           template_id: string
+          test_method?: string | null
           unit?: string | null
           upper_limit?: number | null
         }
@@ -250,6 +252,7 @@ export type Database = {
           lower_limit?: number | null
           parameter_name?: string
           template_id?: string
+          test_method?: string | null
           unit?: string | null
           upper_limit?: number | null
         }

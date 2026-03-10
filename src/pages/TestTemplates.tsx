@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { toast } from "sonner";
 import { Plus, Trash2, Save, Loader2, FlaskConical, Edit, X } from "lucide-react";
+import TestMethodSelect from "@/components/TestMethodSelect";
 
 interface TemplateParam {
   id: string;
@@ -15,6 +16,7 @@ interface TemplateParam {
   lowerLimit: string;
   upperLimit: string;
   unit: string;
+  testMethod: string;
 }
 
 interface Template {
@@ -33,7 +35,7 @@ const TestTemplates = () => {
   const [showNew, setShowNew] = useState(false);
   const [newName, setNewName] = useState("");
   const [newParams, setNewParams] = useState<TemplateParam[]>([
-    { id: "1", name: "", lowerLimit: "", upperLimit: "", unit: "" },
+    { id: "1", name: "", lowerLimit: "", upperLimit: "", unit: "", testMethod: "" },
   ]);
   const [adding, setAdding] = useState(false);
 
@@ -45,7 +47,7 @@ const TestTemplates = () => {
     setLoading(true);
     const { data, error } = await supabase
       .from("test_templates")
-      .select(`id, test_name, test_parameters (id, parameter_name, lower_limit, upper_limit, unit)`)
+      .select(`id, test_name, test_parameters (id, parameter_name, lower_limit, upper_limit, unit, test_method)`)
       .order("created_at", { ascending: false });
 
     if (error) {
@@ -63,6 +65,7 @@ const TestTemplates = () => {
             lowerLimit: p.lower_limit?.toString() || "",
             upperLimit: p.upper_limit?.toString() || "",
             unit: p.unit || "",
+            testMethod: p.test_method || "",
           })),
         }))
       );
@@ -85,7 +88,7 @@ const TestTemplates = () => {
   const addParamToTemplate = (templateId: string) => {
     setTemplates(ts => ts.map(t => t.id === templateId ? {
       ...t, isDirty: true,
-      parameters: [...t.parameters, { id: `new-${Date.now()}`, name: "", lowerLimit: "", upperLimit: "", unit: "" }],
+      parameters: [...t.parameters, { id: `new-${Date.now()}`, name: "", lowerLimit: "", upperLimit: "", unit: "", testMethod: "" }],
     } : t));
   };
 
@@ -114,6 +117,7 @@ const TestTemplates = () => {
       lower_limit: p.lowerLimit ? parseFloat(p.lowerLimit) : null,
       upper_limit: p.upperLimit ? parseFloat(p.upperLimit) : null,
       unit: p.unit || null,
+      test_method: p.testMethod || null,
     }));
 
     const { error: pErr } = await supabase.from("test_parameters").insert(params);
@@ -156,6 +160,7 @@ const TestTemplates = () => {
       lower_limit: p.lowerLimit ? parseFloat(p.lowerLimit) : null,
       upper_limit: p.upperLimit ? parseFloat(p.upperLimit) : null,
       unit: p.unit || null,
+      test_method: p.testMethod || null,
     }));
 
     const { error: pErr } = await supabase.from("test_parameters").insert(params);
@@ -164,14 +169,14 @@ const TestTemplates = () => {
       toast.success("Template created!");
       setShowNew(false);
       setNewName("");
-      setNewParams([{ id: "1", name: "", lowerLimit: "", upperLimit: "", unit: "" }]);
+      setNewParams([{ id: "1", name: "", lowerLimit: "", upperLimit: "", unit: "", testMethod: "" }]);
       fetchTemplates();
     }
     setAdding(false);
   };
 
   const addNewParam = () => {
-    setNewParams([...newParams, { id: `${Date.now()}`, name: "", lowerLimit: "", upperLimit: "", unit: "" }]);
+    setNewParams([...newParams, { id: `${Date.now()}`, name: "", lowerLimit: "", upperLimit: "", unit: "", testMethod: "" }]);
   };
 
   const updateNewParam = (id: string, field: keyof TemplateParam, value: string) => {
@@ -230,11 +235,12 @@ const TestTemplates = () => {
                     </Button>
                   )}
                 </div>
-                <div className="grid gap-2 md:grid-cols-4">
+                <div className="grid gap-2 md:grid-cols-5">
                   <Input placeholder="Parameter Name *" value={param.name} onChange={e => updateNewParam(param.id, "name", e.target.value)} className="text-sm" />
                   <Input type="number" step="any" placeholder="Lower Limit" value={param.lowerLimit} onChange={e => updateNewParam(param.id, "lowerLimit", e.target.value)} className="text-sm" />
                   <Input type="number" step="any" placeholder="Upper Limit" value={param.upperLimit} onChange={e => updateNewParam(param.id, "upperLimit", e.target.value)} className="text-sm" />
                   <Input placeholder="Unit (ppm, cSt...)" value={param.unit} onChange={e => updateNewParam(param.id, "unit", e.target.value)} className="text-sm" />
+                  <TestMethodSelect value={param.testMethod} onChange={v => updateNewParam(param.id, "testMethod", v)} />
                 </div>
               </div>
             ))}
@@ -292,11 +298,12 @@ const TestTemplates = () => {
                         </Button>
                       )}
                     </div>
-                    <div className="grid gap-2 md:grid-cols-4">
+                    <div className="grid gap-2 md:grid-cols-5">
                       <Input placeholder="Parameter Name *" value={param.name} onChange={e => updateParam(template.id, param.id, "name", e.target.value)} className="text-sm" />
                       <Input type="number" step="any" placeholder="Lower Limit" value={param.lowerLimit} onChange={e => updateParam(template.id, param.id, "lowerLimit", e.target.value)} className="text-sm" />
                       <Input type="number" step="any" placeholder="Upper Limit" value={param.upperLimit} onChange={e => updateParam(template.id, param.id, "upperLimit", e.target.value)} className="text-sm" />
                       <Input placeholder="Unit" value={param.unit} onChange={e => updateParam(template.id, param.id, "unit", e.target.value)} className="text-sm" />
+                      <TestMethodSelect value={param.testMethod} onChange={v => updateParam(template.id, param.id, "testMethod", v)} />
                     </div>
                   </div>
                 ))}

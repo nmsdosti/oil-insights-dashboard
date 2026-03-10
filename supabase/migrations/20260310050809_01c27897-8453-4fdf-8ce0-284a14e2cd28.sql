@@ -1,0 +1,1 @@
+ALTER TABLE public.test_parameters ADD COLUMN test_method text DEFAULT NULL;
