@@ -2,7 +2,7 @@ import { ReactNode } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
-import { Beaker, FileText, Settings, LogOut, Plus } from "lucide-react";
+import { Beaker, FileText, Settings, LogOut, Plus, FlaskConical } from "lucide-react";
 import { toast } from "sonner";
 
 interface AppLayoutProps {
@@ -40,6 +40,17 @@ export const AppLayout = ({ children }: AppLayoutProps) => {
                 <div className="flex items-center gap-2">
                   <FileText className="h-4 w-4" />
                   Cases
+                </div>
+              </Link>
+              <Link
+                to="/tests"
+                className={`text-sm font-medium transition-colors ${
+                  isActive("/tests") ? "text-primary" : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <FlaskConical className="h-4 w-4" />
+                  Tests
                 </div>
               </Link>
               <Link

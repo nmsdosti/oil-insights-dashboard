@@ -13,6 +13,7 @@ import AddTest from "./pages/AddTest";
 import EditTest from "./pages/EditTest";
 import EditCase from "./pages/EditCase";
 import ManageTests from "./pages/ManageTests";
+import TestTemplates from "./pages/TestTemplates";
 import CaseDashboard from "./pages/CaseDashboard";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
@@ -38,6 +39,7 @@ const App = () => (
           <Route path="/case/:caseId/manage-tests" element={<AuthGuard><AppLayout><ManageTests /></AppLayout></AuthGuard>} />
           <Route path="/case/:caseId" element={<AuthGuard><AppLayout><CaseDashboard /></AppLayout></AuthGuard>} />
           <Route path="/case/:caseId/dashboard" element={<AuthGuard><AppLayout><CaseDashboard /></AppLayout></AuthGuard>} />
+          <Route path="/tests" element={<AuthGuard><AppLayout><TestTemplates /></AppLayout></AuthGuard>} />
           <Route path="/settings" element={<AuthGuard><AppLayout><Settings /></AppLayout></AuthGuard>} />
           <Route path="*" element={<NotFound />} />
         </Routes>
