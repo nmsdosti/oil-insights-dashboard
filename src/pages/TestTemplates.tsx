@@ -65,6 +65,7 @@ const TestTemplates = () => {
             lowerLimit: p.lower_limit?.toString() || "",
             upperLimit: p.upper_limit?.toString() || "",
             unit: p.unit || "",
+            testMethod: p.test_method || "",
           })),
         }))
       );
