@@ -39,6 +39,7 @@ const App = () => (
           <Route path="/case/:caseId/manage-tests" element={<AuthGuard><AppLayout><ManageTests /></AppLayout></AuthGuard>} />
           <Route path="/case/:caseId" element={<AuthGuard><AppLayout><CaseDashboard /></AppLayout></AuthGuard>} />
           <Route path="/case/:caseId/dashboard" element={<AuthGuard><AppLayout><CaseDashboard /></AppLayout></AuthGuard>} />
+          <Route path="/tests" element={<AuthGuard><AppLayout><TestTemplates /></AppLayout></AuthGuard>} />
           <Route path="/settings" element={<AuthGuard><AppLayout><Settings /></AppLayout></AuthGuard>} />
           <Route path="*" element={<NotFound />} />
         </Routes>

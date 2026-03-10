@@ -43,6 +43,17 @@ export const AppLayout = ({ children }: AppLayoutProps) => {
                 </div>
               </Link>
               <Link
+                to="/tests"
+                className={`text-sm font-medium transition-colors ${
+                  isActive("/tests") ? "text-primary" : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <FlaskConical className="h-4 w-4" />
+                  Tests
+                </div>
+              </Link>
+              <Link
                 to="/settings"
                 className={`text-sm font-medium transition-colors ${
                   isActive("/settings") ? "text-primary" : "text-muted-foreground hover:text-foreground"
