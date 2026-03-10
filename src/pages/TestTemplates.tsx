@@ -235,11 +235,12 @@ const TestTemplates = () => {
                     </Button>
                   )}
                 </div>
-                <div className="grid gap-2 md:grid-cols-4">
+                <div className="grid gap-2 md:grid-cols-5">
                   <Input placeholder="Parameter Name *" value={param.name} onChange={e => updateNewParam(param.id, "name", e.target.value)} className="text-sm" />
                   <Input type="number" step="any" placeholder="Lower Limit" value={param.lowerLimit} onChange={e => updateNewParam(param.id, "lowerLimit", e.target.value)} className="text-sm" />
                   <Input type="number" step="any" placeholder="Upper Limit" value={param.upperLimit} onChange={e => updateNewParam(param.id, "upperLimit", e.target.value)} className="text-sm" />
                   <Input placeholder="Unit (ppm, cSt...)" value={param.unit} onChange={e => updateNewParam(param.id, "unit", e.target.value)} className="text-sm" />
+                  <TestMethodSelect value={param.testMethod} onChange={v => updateNewParam(param.id, "testMethod", v)} />
                 </div>
               </div>
             ))}
