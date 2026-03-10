@@ -16,6 +16,7 @@ interface TemplateParam {
   lowerLimit: string;
   upperLimit: string;
   unit: string;
+  testMethod: string;
 }
 
 interface Template {
