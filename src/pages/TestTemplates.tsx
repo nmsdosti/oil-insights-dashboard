@@ -117,6 +117,7 @@ const TestTemplates = () => {
       lower_limit: p.lowerLimit ? parseFloat(p.lowerLimit) : null,
       upper_limit: p.upperLimit ? parseFloat(p.upperLimit) : null,
       unit: p.unit || null,
+      test_method: p.testMethod || null,
     }));
 
     const { error: pErr } = await supabase.from("test_parameters").insert(params);
