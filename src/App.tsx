@@ -13,6 +13,7 @@ import AddTest from "./pages/AddTest";
 import EditTest from "./pages/EditTest";
 import EditCase from "./pages/EditCase";
 import ManageTests from "./pages/ManageTests";
+import TestTemplates from "./pages/TestTemplates";
 import CaseDashboard from "./pages/CaseDashboard";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
