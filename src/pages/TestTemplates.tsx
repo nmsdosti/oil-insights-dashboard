@@ -47,7 +47,7 @@ const TestTemplates = () => {
     setLoading(true);
     const { data, error } = await supabase
       .from("test_templates")
-      .select(`id, test_name, test_parameters (id, parameter_name, lower_limit, upper_limit, unit)`)
+      .select(`id, test_name, test_parameters (id, parameter_name, lower_limit, upper_limit, unit, test_method)`)
       .order("created_at", { ascending: false });
 
     if (error) {
