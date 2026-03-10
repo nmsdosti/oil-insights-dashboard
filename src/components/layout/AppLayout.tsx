@@ -2,7 +2,7 @@ import { ReactNode } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
-import { Beaker, FileText, Settings, LogOut, Plus } from "lucide-react";
+import { Beaker, FileText, Settings, LogOut, Plus, FlaskConical } from "lucide-react";
 import { toast } from "sonner";
 
 interface AppLayoutProps {
