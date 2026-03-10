@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { toast } from "sonner";
 import { Plus, Trash2, Save, Loader2, FlaskConical, Edit, X } from "lucide-react";
+import TestMethodSelect from "@/components/TestMethodSelect";
 
 interface TemplateParam {
   id: string;
