@@ -84,7 +84,7 @@ const AddTest = () => {
       setTestName(template.test_name);
       setParameters(params.map((p, idx) => ({
         id: `${idx + 1}`, name: p.parameter_name, lowerLimit: p.lower_limit?.toString() || "", upperLimit: p.upper_limit?.toString() || "",
-        actualValue: "", unit: p.unit || "", particleSize: "", testMethod: "",
+        actualValue: "", unit: p.unit || "", particleSize: "", testMethod: (p as any).test_method || "",
       })));
     }
   };
