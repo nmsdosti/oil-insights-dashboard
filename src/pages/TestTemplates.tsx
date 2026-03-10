@@ -169,7 +169,7 @@ const TestTemplates = () => {
       toast.success("Template created!");
       setShowNew(false);
       setNewName("");
-      setNewParams([{ id: "1", name: "", lowerLimit: "", upperLimit: "", unit: "" }]);
+      setNewParams([{ id: "1", name: "", lowerLimit: "", upperLimit: "", unit: "", testMethod: "" }]);
       fetchTemplates();
     }
     setAdding(false);
