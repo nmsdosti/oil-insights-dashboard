@@ -134,8 +134,6 @@ const AddTest = () => {
       toast.error("Failed to save test results");
     } else {
       toast.success("Test saved successfully!");
-      const saveAsTemplate = window.confirm("Save this test as a template?");
-      if (saveAsTemplate) await saveAsTemplate_func();
       const addAnother = window.confirm("Add another test?");
       if (addAnother) {
         setTestName(""); setImageUrl(""); setImageComment(""); setImageFile(null); setImagePreview("");
