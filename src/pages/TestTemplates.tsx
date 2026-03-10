@@ -176,7 +176,7 @@ const TestTemplates = () => {
   };
 
   const addNewParam = () => {
-    setNewParams([...newParams, { id: `${Date.now()}`, name: "", lowerLimit: "", upperLimit: "", unit: "" }]);
+    setNewParams([...newParams, { id: `${Date.now()}`, name: "", lowerLimit: "", upperLimit: "", unit: "", testMethod: "" }]);
   };
 
   const updateNewParam = (id: string, field: keyof TemplateParam, value: string) => {
